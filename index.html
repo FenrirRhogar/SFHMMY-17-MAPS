@@ -4,20 +4,28 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>SFHMMY 17 Maps</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
 	<style>
 		:root {
-			--bg-1: #0b1220;
-			--bg-2: #1b2f4a;
-			--ink: #eef4ff;
-			--muted: #bbcadf;
-			--panel: #11243d;
-			--line: #2b4f78;
-			--accent-a: #ffd166;
-			--accent-b: #22c55e;
-			--shadow: rgba(2, 8, 20, 0.55);
+			--bg-top: #041a2c;
+			--bg-bottom: #08111d;
+			--ink: #f5fbff;
+			--muted: #a7bed2;
+			--window: #0f2237;
+			--window-edge: #37648f;
+			--card: #152f4c;
+			--card-edge: #4375a8;
+			--gold: #f2b948;
+			--mint: #46d28a;
+			--danger: #c84242;
+			--shadow: rgba(0, 7, 13, 0.65);
 		}
 
-		* { box-sizing: border-box; }
+		* {
+			box-sizing: border-box;
+		}
 
 		body {
 			margin: 0;
@@ -25,50 +33,127 @@
 			display: grid;
 			place-items: center;
 			color: var(--ink);
-			font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+			font-family: "Chakra Petch", sans-serif;
 			background:
-				radial-gradient(circle at 10% 10%, #274d78 0%, transparent 35%),
-				radial-gradient(circle at 85% 15%, #295268 0%, transparent 30%),
-				linear-gradient(145deg, var(--bg-1), var(--bg-2));
+				radial-gradient(circle at 12% 12%, rgba(66, 128, 180, 0.32), transparent 33%),
+				radial-gradient(circle at 86% 18%, rgba(78, 174, 133, 0.22), transparent 30%),
+				linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
 			padding: 24px;
+			overflow-x: hidden;
+		}
+
+		body::before {
+			content: "";
+			position: fixed;
+			inset: 0;
+			pointer-events: none;
+			background: repeating-linear-gradient(
+				0deg,
+				rgba(255, 255, 255, 0.03) 0,
+				rgba(255, 255, 255, 0.03) 1px,
+				transparent 1px,
+				transparent 4px
+			);
+			opacity: 0.25;
+		}
+
+		body::after {
+			content: "";
+			position: fixed;
+			inset: -20%;
+			pointer-events: none;
+			background: conic-gradient(from 180deg, rgba(242, 185, 72, 0.07), rgba(70, 210, 138, 0.08), rgba(67, 117, 168, 0.08), rgba(242, 185, 72, 0.07));
+			animation: spin 24s linear infinite;
+			opacity: 0.55;
+		}
+
+		@keyframes spin {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(360deg); }
 		}
 
 		.shell {
-			width: min(980px, 100%);
-			background: rgba(10, 21, 37, 0.84);
-			border: 1px solid var(--line);
-			box-shadow: 0 18px 45px var(--shadow);
-			border-radius: 16px;
+			position: relative;
+			z-index: 1;
+			width: min(1020px, 100%);
+			background: var(--window);
+			border: 2px solid #000;
+			box-shadow: 0 16px 0 #000, 0 28px 60px var(--shadow);
+			border-radius: 12px;
 			overflow: hidden;
-			backdrop-filter: blur(2px);
+		}
+
+		.shell::before {
+			content: "";
+			position: absolute;
+			inset: 0;
+			border: 2px solid var(--window-edge);
+			pointer-events: none;
+			opacity: 0.6;
 		}
 
 		.head {
-			padding: 28px 28px 18px;
-			border-bottom: 1px solid var(--line);
-			background: linear-gradient(90deg, rgba(255, 209, 102, 0.12), rgba(34, 197, 94, 0.08));
+			padding: 26px 26px 18px;
+			border-bottom: 2px solid #000;
+			background:
+				linear-gradient(90deg, rgba(55, 100, 143, 0.6), rgba(29, 62, 96, 0.82)),
+				repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 8px, transparent 8px, transparent 16px);
+		}
+
+		.head-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 14px;
+		}
+
+		.head-badges {
+			display: inline-flex;
+			gap: 6px;
+		}
+
+		.tiny-light {
+			width: 11px;
+			height: 11px;
+			border: 2px solid #000;
+			box-shadow: 1px 1px 0 #000;
+		}
+
+		.tiny-light.a { background: var(--gold); }
+		.tiny-light.b { background: var(--mint); }
+		.tiny-light.c { background: var(--danger); }
+
+		.version {
+			font-size: 0.74rem;
+			letter-spacing: 0.12em;
+			font-weight: 700;
+			color: #d0e6ff;
+			text-transform: uppercase;
 		}
 
 		.kicker {
 			margin: 0 0 8px;
-			color: var(--accent-a);
+			color: var(--gold);
 			font-size: 12px;
-			letter-spacing: 0.12em;
+			letter-spacing: 0.16em;
 			text-transform: uppercase;
 			font-weight: 700;
 		}
 
 		h1 {
 			margin: 0;
-			font-size: clamp(1.5rem, 3.8vw, 2.2rem);
+			font-family: "Special Elite", serif;
+			font-size: clamp(1.7rem, 4.4vw, 2.6rem);
 			line-height: 1.2;
-			letter-spacing: 0.03em;
+			letter-spacing: 0.04em;
+			text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
 		}
 
 		.sub {
 			margin: 10px 0 0;
 			color: var(--muted);
-			font-size: 0.98rem;
+			font-size: 0.96rem;
 			line-height: 1.5;
 			max-width: 72ch;
 		}
@@ -76,63 +161,80 @@
 		.grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 16px;
-			padding: 22px;
+			gap: 14px;
+			padding: 20px;
 		}
 
 		.card {
+			position: relative;
 			display: flex;
 			flex-direction: column;
-			gap: 12px;
-			background: var(--panel);
-			border: 1px solid var(--line);
+			gap: 11px;
+			background: var(--card);
+			border: 2px solid #000;
 			border-radius: 12px;
 			padding: 18px;
 			text-decoration: none;
 			color: inherit;
-			transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+			box-shadow: 4px 4px 0 #000;
+			transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+		}
+
+		.card::before {
+			content: "";
+			position: absolute;
+			inset: 0;
+			border: 2px solid var(--card-edge);
+			border-radius: 12px;
+			opacity: 0.45;
+			pointer-events: none;
 		}
 
 		.card:hover {
-			transform: translateY(-2px);
-			border-color: #4f84bd;
-			box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+			transform: translate(-2px, -2px);
+			box-shadow: 6px 6px 0 #000;
+			background: #1a3a5c;
+		}
+
+		.card:focus-visible {
+			outline: 3px solid var(--gold);
+			outline-offset: 3px;
 		}
 
 		.tag {
 			width: fit-content;
-			padding: 4px 10px;
-			border-radius: 999px;
-			font-size: 12px;
+			padding: 4px 9px;
+			border-radius: 7px;
+			font-size: 11px;
 			font-weight: 700;
-			letter-spacing: 0.08em;
+			letter-spacing: 0.12em;
 			text-transform: uppercase;
-			border: 1px solid transparent;
+			border: 2px solid #000;
+			box-shadow: 1px 1px 0 #000;
 		}
 
 		.tag-city {
-			color: #ffe9ac;
-			background: rgba(255, 209, 102, 0.14);
-			border-color: rgba(255, 209, 102, 0.35);
+			color: #2a1700;
+			background: var(--gold);
 		}
 
 		.tag-campus {
-			color: #b9f6cd;
-			background: rgba(34, 197, 94, 0.14);
-			border-color: rgba(34, 197, 94, 0.35);
+			color: #032110;
+			background: var(--mint);
 		}
 
 		.title {
 			margin: 0;
-			font-size: 1.2rem;
-			letter-spacing: 0.02em;
+			font-size: 1.28rem;
+			letter-spacing: 0.03em;
+			text-transform: uppercase;
 		}
 
 		.desc {
 			margin: 0;
 			color: var(--muted);
 			line-height: 1.5;
-			font-size: 0.96rem;
+			font-size: 0.94rem;
 			flex: 1;
 		}
 
@@ -143,26 +245,46 @@
 			font-size: 0.9rem;
 			font-weight: 700;
 			color: #eaf3ff;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.card:hover .cta {
+			color: #fff6d4;
+			transform: translateX(2px);
 		}
 
 		.foot {
-			border-top: 1px solid var(--line);
-			padding: 12px 22px 16px;
+			border-top: 2px solid #000;
+			padding: 10px 20px 14px;
+			background: #0c1c2f;
 			color: var(--muted);
-			font-size: 0.83rem;
+			font-size: 0.8rem;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
 		}
 
 		@media (max-width: 760px) {
 			.grid { grid-template-columns: 1fr; }
-			.head { padding: 24px 18px 16px; }
+			.head { padding: 20px 16px 14px; }
+			.head-top { margin-bottom: 11px; }
 			.foot { padding: 12px 18px 16px; }
-			.grid { padding: 16px; }
+			.grid { padding: 14px; }
+			.title { font-size: 1.15rem; }
 		}
 	</style>
 </head>
 <body>
 	<main class="shell">
 		<header class="head">
+			<div class="head-top">
+				<div class="head-badges" aria-hidden="true">
+					<span class="tiny-light a"></span>
+					<span class="tiny-light b"></span>
+					<span class="tiny-light c"></span>
+				</div>
+				<span class="version">v1.7.0</span>
+			</div>
 			<p class="kicker">SFHMMY 17</p>
 			<h1>Maps Hub</h1>
 			<p class="sub">Choose which map you want to open. Both links work as entry points when the project is hosted on GitHub.</p>
