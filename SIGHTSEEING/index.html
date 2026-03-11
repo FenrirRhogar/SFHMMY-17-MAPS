@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ΣΦΗΜΜΥ 17 – Sightseeing</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier Prime', 'Courier New', monospace;
+      background: #0f0c07;
+      color: #e8dfc8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 4rem;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,220,120,0.015) 40px, rgba(255,220,120,0.015) 41px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,220,120,0.015) 40px, rgba(255,220,120,0.015) 41px);
+    }
+
+    .sightseeing-section { width: 100%; max-width: 1100px; }
+
+    /* Header */
+    .section-header { text-align: center; margin-bottom: 2.5rem; }
+    .section-header .badge {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #d4a843; background: rgba(212,168,67,0.1);
+      border: 1px solid rgba(212,168,67,0.4); border-radius: 3px;
+      padding: 0.3rem 1rem; margin-bottom: 1rem;
+    }
+    .section-header h2 {
+      font-family: 'Special Elite', 'Courier Prime', monospace;
+      font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 400;
+      color: #f0e0a0;
+      text-shadow: 2px 2px 0px rgba(0,0,0,0.5), 0 0 30px rgba(212,168,67,0.2);
+      letter-spacing: 0.05em; line-height: 1.2; margin-bottom: 0.75rem;
+    }
+    .section-header p { font-size: 0.9rem; color: #a89878; max-width: 520px; margin: 0 auto; line-height: 1.6; }
+
+    /* Two-column grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 1.2rem;
+      align-items: start;
+    }
+    @media (max-width: 740px) { .content-grid { grid-template-columns: 1fr; } }
+
+    /* Map Card */
+    .map-card {
+      background: #1a1508;
+      border: 2px solid rgba(212,168,67,0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.7), 0 0 40px rgba(212,168,67,0.05);
+    }
+    .map-card::after {
+      content: '';
+      position: absolute; inset: 5px;
+      border: 1px solid rgba(212,168,67,0.08);
+      pointer-events: none; z-index: 999;
+    }
+    #map { height: 500px; width: 100%; }
+
+    /* Leaflet popups */
+    .leaflet-popup-content-wrapper {
+      background: #1a1508 !important;
+      border: 1px solid rgba(212,168,67,0.5) !important;
+      border-radius: 3px !important;
+      box-shadow: 3px 3px 0px rgba(0,0,0,0.8) !important;
+      padding: 0 !important; overflow: hidden;
+    }
+    .leaflet-popup-content { margin: 0 !important; line-height: 1.5 !important; }
+    .leaflet-popup-tip { background: #1a1508 !important; }
+    .leaflet-popup-close-button { color: #d4a843 !important; font-size: 16px !important; }
+    .popup-card { padding: 0.85rem 1rem; min-width: 185px; }
+    .popup-card .popup-title {
+      font-size: 0.82rem; font-weight: 700; color: #f0d070;
+      margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .popup-card .popup-title .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #d4a843; flex-shrink: 0;
+    }
+    .popup-card .popup-desc { font-size: 0.78rem; color: #a89878; line-height: 1.45; }
+    .popup-discount {
+      display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.5rem;
+      background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.35);
+      border-radius: 3px; padding: 0.2rem 0.5rem;
+      font-size: 0.75rem; color: #6ee7b7; line-height: 1.3;
+    }
+    .popup-discount strong { color: #34d399; font-weight: 700; }
+
+    /* Bus Panel */
+    .bus-panel {
+      background: #1a1508;
+      border: 2px solid rgba(212,168,67,0.3);
+      border-radius: 4px;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.7);
+      overflow: hidden;
+      margin-top: 1.2rem;
+    }
+    .bus-panel-header {
+      background: linear-gradient(135deg, #2a1f00, #1a1508);
+      border-bottom: 2px solid rgba(212,168,67,0.25);
+      padding: 0.85rem 1rem;
+      display: flex; align-items: center; gap: 0.7rem;
+    }
+    .bus-line-badge {
+      background: #d4a843; color: #0f0c07;
+      font-size: 1.15rem; font-weight: 700;
+      width: 42px; height: 42px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    }
+    .route-name { font-size: 0.68rem; letter-spacing: 0.14em; color: #d4a843; text-transform: uppercase; }
+    .route-desc { font-size: 0.78rem; color: #a89878; margin-top: 0.1rem; }
+
+    /* Terminal stops */
+    .terminals { padding: 0.75rem 1rem; border-right: 1px dashed rgba(212,168,67,0.18); flex-shrink: 0; width: 195px; }
+    .terminal-stop { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0; }
+    .terminal-stop + .terminal-stop { border-top: 1px solid rgba(212,168,67,0.07); }
+    .stop-icon {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+    }
+    .stop-icon.start { background: #22c55e; color: #0f0c07; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+    .stop-icon.end   { background: #ef4444; color: #fff;    box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+    .stop-label { font-size: 0.78rem; color: #e8dfc8; }
+    .stop-label small { display: block; font-size: 0.67rem; color: #6b5f45; margin-top: 0.05rem; }
+
+    /* Timetable */
+    .timetable-section { padding: 0.75rem 1rem; flex: 1; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+    .timetable-day { flex: 1; min-width: 160px; margin-bottom: 0; }
+    .day-label {
+      font-size: 0.63rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #d4a843; border-bottom: 1px solid rgba(212,168,67,0.2);
+      padding-bottom: 0.2rem; margin-bottom: 0.4rem;
+    }
+    .times-grid { display: flex; flex-wrap: wrap; gap: 0.22rem; }
+    .time-chip {
+      background: rgba(212,168,67,0.07); border: 1px solid rgba(212,168,67,0.18);
+      border-radius: 2px; padding: 0.12rem 0.38rem;
+      font-size: 0.66rem; color: #b89a50; cursor: default;
+      transition: background 0.15s, color 0.15s;
+    }
+    .time-chip:hover { background: rgba(212,168,67,0.18); color: #f0d070; }
+    .time-chip.hl { background: #f5f0e8; border-color: #000; color: #222; }
+    .timetable-note { font-size: 0.63rem; color: #6b5f45; margin-top: 0.45rem; font-style: italic; line-height: 1.4; }
+
+    /* Line switcher tabs — two-level */
+    .line-tabs {
+      display: flex; border-bottom: 2px solid rgba(212,168,67,0.25); flex-shrink: 0;
+    }
+    .line-tab {
+      flex: 1; padding: 0.55rem; background: transparent;
+      border: none; cursor: pointer; font-family: 'Courier Prime', monospace;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      color: #6b5f45; text-transform: uppercase; transition: all 0.15s;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .line-tab.active { color: #d4a843; border-bottom-color: #d4a843; background: rgba(212,168,67,0.06); }
+    .line-tab:hover:not(.active) { color: #a89878; background: rgba(212,168,67,0.03); }
+    .dir-tabs {
+      display: flex; border-bottom: 1px dashed rgba(212,168,67,0.18); flex-shrink: 0;
+      background: rgba(212,168,67,0.03);
+    }
+    .dir-tab {
+      flex: 1; padding: 0.35rem 0.5rem; background: transparent;
+      border: none; cursor: pointer; font-family: 'Courier Prime', monospace;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      color: #6b5f45; text-transform: uppercase; transition: all 0.15s;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .dir-tab.active { color: #d4a843; border-bottom-color: #d4a843; background: rgba(212,168,67,0.08); }
+    .dir-tab:hover:not(.active) { color: #a89878; }
+    .line-content { display: none; }
+    .line-content.active { display: flex; align-items: flex-start; }
+
+    /* Badge note */
+    .badge-note {
+      display: flex; align-items: center; gap: 0.75rem; margin-top: 1.2rem;
+      background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.22);
+      border-radius: 3px; padding: 0.8rem 1.1rem;
+      font-size: 0.83rem; color: #6ee7b7; line-height: 1.5;
+    }
+    .badge-note .note-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .badge-note strong { color: #34d399; }
+
+    /* ── Venue Panel (right column) ── */
+    .venue-panel {
+      background: #1a1508;
+      border: 2px solid rgba(212,168,67,0.3);
+      border-radius: 4px;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.7);
+      display: flex; flex-direction: column;
+      height: 504px;
+    }
+    .venue-panel-title {
+      font-family: 'Special Elite', cursive;
+      color: #f0e0a0; font-size: 0.82rem; letter-spacing: 0.04em;
+      padding: 0.65rem 0.9rem 0.2rem;
+      background: linear-gradient(135deg, #2a1f00, #1a1508);
+    }
+    .venue-panel-sub {
+      font-size: 0.62rem; color: #ffffff !important;
+      padding: 0.2rem 0.9rem 0.55rem;
+      border-bottom: 1px dashed rgba(212,168,67,0.2);
+      background: linear-gradient(135deg, #2a1f00, #1a1508);
+    }
+    .venue-panel .venue-grid {
+      padding: 0.6rem;
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212,168,67,0.3) transparent;
+    }
+    .venue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.55rem;
+    }
+    .venue-card {
+      background: rgba(26,21,8,0.6);
+      border: 1px solid rgba(212,168,67,0.22);
+      border-radius: 4px;
+      padding: 0.75rem 0.5rem 0.7rem;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.18s, background 0.18s, transform 0.15s, box-shadow 0.18s;
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      user-select: none;
+      height: 110px; overflow: hidden; justify-content: center;
+    }
+    .venue-card:hover {
+      border-color: #d4a843;
+      background: #221b08;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(212,168,67,0.15);
+    }
+    .venue-card:active { transform: translateY(-1px); }
+    .venue-logo { font-size: 1.8rem; line-height: 1; }
+    .venue-logo-img {
+      width: 48px; height: 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 4px rgba(212,168,67,0.3));
+      transition: filter 0.2s, transform 0.2s;
+    }
+    .venue-card:hover .venue-logo-img {
+      filter: drop-shadow(0 0 8px rgba(212,168,67,0.65));
+      transform: scale(1.08);
+    }
+    .venue-name {
+      font-family: 'Courier Prime', monospace;
+      color: #e8dfc8; font-size: 0.68rem; line-height: 1.3; font-weight: 700;
+    }
+    .venue-discount {
+      display: inline-block;
+      background: rgba(52,211,153,0.1);
+      color: #34d399;
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 3px; padding: 1px 6px;
+      font-family: 'Courier Prime', monospace;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+    }
+
+    /* ── Active card highlight (bidirectional) ───────────────────── */
+    .venue-card.active {
+      border-color: #d4a843 !important;
+      background: #2a1f08 !important;
+      box-shadow: 0 0 0 2px rgba(212,168,67,0.4), 0 4px 14px rgba(212,168,67,0.2) !important;
+    }
+
+    /* ── Category filter bar ─────────────────────────────────────── */
+    .filter-bar {
+      display: flex; gap: 0.3rem; flex-wrap: wrap;
+      padding: 0.4rem 0.6rem 0.3rem;
+      border-bottom: 1px dashed rgba(212,168,67,0.2);
+    }
+    .filter-btn {
+      background: rgba(212,168,67,0.06);
+      border: 1px solid rgba(212,168,67,0.22);
+      border-radius: 3px; color: #a89878;
+      font-family: 'Courier Prime', monospace;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 0.15rem 0.45rem; cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: #d4a843; color: #d4a843; }
+    .filter-btn.active { background: rgba(212,168,67,0.18); border-color: #d4a843; color: #f0d070; }
+
+    /* ── Popup photo ─────────────────────────────────────────────── */
+    .popup-photo {
+      width: 100%; height: 110px; object-fit: cover;
+      display: block; border-bottom: 1px solid rgba(212,168,67,0.2);
+    }
+
+    /* ── Google Maps link in popup ───────────────────────────────── */
+    .popup-gmaps {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      margin-top: 0.5rem; font-size: 0.72rem; color: #d4a843;
+      text-decoration: none; border: 1px solid rgba(212,168,67,0.3);
+      border-radius: 3px; padding: 0.2rem 0.5rem; transition: background 0.15s;
+    }
+    .popup-gmaps:hover { background: rgba(212,168,67,0.12); color: #f0d070; }
+
+    /* ── Dark / Light map tile toggle ────────────────────────────── */
+    .map-toggle {
+      position: absolute; bottom: 10px; right: 10px; z-index: 1000;
+      background: #1a1508; border: 1px solid rgba(212,168,67,0.5);
+      border-radius: 3px; color: #d4a843;
+      font-family: 'Courier Prime', monospace;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em;
+      padding: 0.3rem 0.6rem; cursor: pointer;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+      transition: background 0.15s, color 0.15s;
+    }
+    .map-toggle:hover { background: #2a1f08; color: #f0d070; }
+
+    /* ── Extra mobile rules ──────────────────────────────────────── */
+    @media (max-width: 740px) {
+      #map { height: 320px; }
+      .venue-panel { height: auto; max-height: 300px; }
+      .line-content.active { flex-direction: column; }
+      .terminals { width: 100%; border-right: none; border-bottom: 1px dashed rgba(212,168,67,0.18); }
+      .timetable-section { flex-direction: column; }
+    }
+  </style>
+  <style>
+    body {
+      background: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      padding: 20px 20px 60px;
+      color: #111;
+    }
+
+    .outer { border: 2px solid #000; width: min(1180px, 100%); }
+    .infill { border: 4px solid #c8a800; }
+    .inner { border: 2px solid #000; background: #f5f0e8; }
+
+    .titlebar {
+      background: #1a6fb5;
+      border-bottom: 2px solid #000;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 2px 2px 0 0 #5c9cd9, inset -2px -2px 0 0 #104574;
+    }
+    .titlebar-title {
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+    }
+    .titlebar-right { display: flex; align-items: center; gap: 10px; }
+    .titlebar-ver {
+      color: #b8d4ee;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .titlebar-buttons { display: flex; gap: 3px; }
+    .tb-btn { width: 12px; height: 12px; border: 2px solid #000; display: inline-block; }
+    .tb-btn-min { background: #c8a800; }
+    .tb-btn-max { background: #2e8b57; }
+    .tb-btn-cls { background: #c0392b; }
+
+    .window-body { padding: 16px; }
+    .sightseeing-section { width: 100%; max-width: none; }
+
+    .section-header {
+      border: 2px solid #000;
+      background: #c8a800;
+      box-shadow: inset 2px 2px 0 0 #f7e48a, inset -2px -2px 0 0 #826c00;
+      text-align: center;
+      margin-bottom: 1rem;
+      padding: 16px;
+    }
+    .section-header .badge {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      color: #fff;
+      background: #1a6fb5;
+      border: 2px solid #000;
+      padding: 3px 10px;
+      margin-bottom: 10px;
+    }
+    .section-header h2 {
+      font-size: clamp(1.6rem, 3vw, 2.15rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: #000;
+      line-height: 1.1;
+      margin-bottom: 6px;
+      font-family: monospace;
+      text-shadow: none;
+    }
+    .section-header p {
+      font-size: 10px;
+      font-weight: 700;
+      color: #3a2a00;
+      max-width: 860px;
+      margin: 0 auto;
+      line-height: 1.5;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .content-grid { gap: 0.8rem; }
+
+    .map-card,
+    .venue-panel,
+    .bus-panel {
+      background: #f1e1a5;
+      border: 2px solid #000;
+      border-radius: 0;
+      box-shadow: 4px 4px 0 #000;
+    }
+    .map-card::after {
+      inset: 4px;
+      border: 2px solid rgba(0,0,0,0.08);
+    }
+    #map { background: #f1e1a5; }
+    .leaflet-tile-pane { filter: sepia(0.3) saturate(0.96) hue-rotate(-5deg) brightness(0.72) contrast(1.55); }
+    .leaflet-tile { opacity: 1; }
+    .map-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 700;
+      background:
+        linear-gradient(180deg, rgba(125,88,50,0.045), rgba(71,53,35,0.02)),
+        repeating-linear-gradient(0deg, rgba(71,53,35,0.015), rgba(71,53,35,0.015) 1px, transparent 1px, transparent 3px);
+      mix-blend-mode: multiply;
+    }
+
+    .map-watermark {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      z-index: 1100;
+      background: rgba(125,88,50,0.9);
+      color: #f1e1a5;
+      border: 2px solid #000;
+      box-shadow: 2px 2px 0 #000;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      pointer-events: none;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #fff !important;
+      border: 2px solid #000 !important;
+      border-radius: 0 !important;
+      box-shadow: 4px 4px 0 #000 !important;
+    }
+    .leaflet-popup-tip { background: #fff !important; }
+    .leaflet-popup-close-button { color: #1a6fb5 !important; }
+    .leaflet-control-zoom a {
+      background: #1a6fb5 !important;
+      color: #fff !important;
+      border: 2px solid #000 !important;
+      border-radius: 0 !important;
+      font-family: monospace !important;
+      font-weight: 900 !important;
+    }
+    .leaflet-control-zoom a:hover { background: #2e8b57 !important; }
+    .leaflet-control-attribution {
+      background: rgba(245,240,232,0.9) !important;
+      color: #333 !important;
+      border: 1px solid #000 !important;
+      font-size: 9px !important;
+    }
+    .leaflet-control-attribution a { color: #1a6fb5 !important; }
+
+    .popup-card { min-width: 190px; }
+    .popup-card .popup-title {
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: #000;
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.08em;
+    }
+    .popup-card .popup-desc { color: #333; font-size: 0.7rem; }
+    .popup-discount {
+      background: #c8a800;
+      border: 1px solid #000;
+      color: #1f1a06;
+      border-radius: 0;
+      font-size: 0.66rem;
+    }
+    .popup-discount strong { color: #000; }
+    .popup-gmaps {
+      color: #1a6fb5;
+      border: 1px solid #000;
+      border-radius: 0;
+      font-size: 0.66rem;
+    }
+    .popup-gmaps:hover { background: #e8f1fa; color: #104574; }
+
+    .map-toggle {
+      background: #1a6fb5;
+      border: 2px solid #000;
+      border-radius: 0;
+      color: #fff;
+      box-shadow: 2px 2px 0 #000;
+      font-family: monospace;
+      font-weight: 900;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .map-toggle:hover { background: #2e8b57; color: #fff; }
+
+    .venue-panel-title,
+    .bus-panel-header,
+    .panel-title {
+      background: #1a6fb5;
+      color: #fff;
+      border-bottom: 2px solid #000;
+      font-family: monospace;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+    }
+    .venue-panel-sub {
+      color: #ffffff !important;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .route-desc,
+    .route-name {
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .filter-bar,
+    .line-tabs,
+    .dir-tabs {
+      border-bottom: 2px solid #000;
+      background: #f5f0e8;
+    }
+    .filter-btn,
+    .line-tab,
+    .dir-tab {
+      background: #f5f0e8;
+      border: 2px solid #000;
+      border-radius: 0;
+      color: #333;
+      font-family: monospace;
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 2px;
+      padding: 0.2rem 0.5rem;
+    }
+    .line-tab,
+    .dir-tab { border-bottom-width: 2px; }
+    .filter-btn.active,
+    .line-tab.active,
+    .dir-tab.active {
+      background: #c8a800;
+      color: #000;
+      border-color: #000;
+    }
+    .filter-btn:hover,
+    .line-tab:hover,
+    .dir-tab:hover { background: #fff; color: #000; }
+
+    .venue-card {
+      background: #f5f0e8;
+      border: 2px solid #000;
+      border-radius: 0;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .venue-card:hover {
+      background: #fff;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 #000;
+      border-color: #000;
+    }
+    .venue-card.active {
+      background: #c8a800 !important;
+      box-shadow: inset 2px 2px 0 0 #f7e48a, inset -2px -2px 0 0 #826c00 !important;
+      border-color: #000 !important;
+    }
+    .venue-name { color: #111; font-family: monospace; }
+    .venue-discount {
+      background: #1a6fb5;
+      color: #fff;
+      border: 1px solid #000;
+      border-radius: 0;
+      font-family: monospace;
+      font-size: 0.58rem;
+    }
+
+    .bus-line-badge {
+      background: #5b3f24;
+      color: #000;
+      border: 2px solid #000;
+      border-radius: 0;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .terminals { border-right: 2px solid #000; }
+    .terminal-stop + .terminal-stop { border-top: 1px solid rgba(0,0,0,0.15); }
+    .stop-icon.start,
+    .stop-icon.end {
+      box-shadow: 2px 2px 0 #000;
+      border: 1px solid #000;
+      border-radius: 0;
+    }
+    .stop-label { color: #111; }
+    .stop-label small,
+    .day-label,
+    .timetable-note { color: #444; }
+    .time-chip {
+      background: #f5f0e8;
+      border: 1px solid #000;
+      border-radius: 0;
+      color: #222;
+      font-weight: 700;
+    }
+    .time-chip:hover {
+      background: #c8a800;
+      border-color: #000;
+      color: #000;
+    }
+    .time-chip.hl {
+      background: #f5f0e8;
+      border-color: #000;
+      color: #222;
+    }
+
+    .badge-note {
+      background: #1a1a1a;
+      border: 2px solid #000;
+      border-radius: 0;
+      color: #c8a800;
+      box-shadow: 3px 3px 0 #000;
+    }
+    .badge-note strong { color: #f7e48a; }
+
+    .footer {
+      border-top: 2px solid #000;
+      background: #1a1a1a;
+      padding: 5px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-text {
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #826c00;
+    }
+    .footer-dots { display: flex; gap: 4px; }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #c8a800;
+      border: 1px solid #000;
+      animation: dot-pulse 1.2s infinite;
+    }
+    .status-dot:nth-child(2) { animation-delay: 0.4s; }
+    .status-dot:nth-child(3) { animation-delay: 0.8s; }
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    .taskbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: #2e8b57;
+      border-top: 2px solid #000;
+      display: flex;
+      align-items: stretch;
+      z-index: 2000;
+    }
+    .taskbar-start {
+      padding: 0 16px;
+      background: #1a6fb5;
+      border-right: 2px solid #000;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .taskbar-sep {
+      width: 1px;
+      background: #000;
+      margin: 4px 6px;
+      opacity: 0.3;
+    }
+    .taskbar-item {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #fff;
+      border: 2px solid #000;
+      margin: 3px 2px;
+      background: #1a6fb5;
+      box-shadow: inset 1px 1px 0 0 #5c9cd9, inset -1px -1px 0 0 #104574;
+    }
+    .taskbar-clock {
+      margin-left: auto;
+      padding: 0 14px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      border-left: 2px solid #000;
+    }
+
+    @media (max-width: 740px) {
+      .window-body { padding: 10px; }
+      .terminals { border-right: none; border-bottom: 2px solid #000; width: 100%; }
+      .taskbar-item { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="outer">
+    <div class="infill">
+      <div class="inner">
+
+        <div class="titlebar">
+          <span class="titlebar-title">SIGHTSEEING - System</span>
+          <div class="titlebar-right">
+            <span class="titlebar-ver">v1.7.0</span>
+            <div class="titlebar-buttons">
+              <span class="tb-btn tb-btn-min"></span>
+              <span class="tb-btn tb-btn-max"></span>
+              <span class="tb-btn tb-btn-cls"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="window-body">
+
+  <section class="sightseeing-section">
+
+    <div class="section-header">
+      <div class="badge">📍 ΣΦΗΜΜΥ 17 · Χανιά 17-18-19 Απριλίου 2026</div>
+      <h2>Explore the City</h2>
+      <p>Ανακάλυψε τα highlights των Χανίων γύρω από το συνέδριο. Πάτα σε μια πινέζα για να ζουμάρεις και να δεις λεπτομέρειες & προσφορές σε συγκεκριμένα καταστήματα με την επίδειξη του badge του συνεδρίου.</p>
+    </div>
+
+    <div class="content-grid">
+
+      <div class="map-card">
+        <div id="map"></div>
+        <div class="map-watermark">SFHMMY 17 MAPS</div>
+      </div>
+
+      <div class="venue-panel">
+        <div class="venue-panel-title">Μαγαζιά &amp; Αξιοθέατα</div>
+        <p class="venue-panel-sub">Πάτησε για να εντοπίσεις τη θέση στον χάρτη</p>
+        <div class="filter-bar" id="filter-bar">
+          <button class="filter-btn active" data-cat="all">Όλα</button>
+          <button class="filter-btn" data-cat="kafe">☕ Καφέ</button>
+          <button class="filter-btn" data-cat="fagito">🍴 Φαγητό</button>
+          <button class="filter-btn" data-cat="poto">🍷 Ποτό</button>
+          <button class="filter-btn" data-cat="aksiotheato">🏛️ Αξιοθέατα</button>
+        </div>
+        <div class="venue-grid" id="venue-grid"></div>
+      </div>
+
+    </div>
+
+
+    <div class="bus-panel">
+      <div class="bus-panel-header">
+        <div class="bus-line-badge" id="active-badge">18</div>
+        <div>
+          <div class="route-name">Γραμμή Λεωφορείου</div>
+          <div class="route-desc" id="active-route-desc">Πλ. 1866 → Καμπάνι (γρ. 18)</div>
+        </div>
+      </div>
+      <div class="line-tabs">
+        <button class="line-tab active" data-line="18">Γραμμή 18</button>
+        <button class="line-tab" data-line="23">Γραμμή 23</button>
+      </div>
+      <div class="dir-tabs" id="dir-tabs-18">
+        <button class="dir-tab active" data-content="18out">Πλ. 1866 → Καμπάνι</button>
+        <button class="dir-tab" data-content="18ret">Καμπάνι → Πλ. 1866</button>
+      </div>
+      <div class="dir-tabs" id="dir-tabs-23" style="display:none">
+        <button class="dir-tab active" data-content="23out">Πολυτεχνείο → Κέντρο</button>
+        <button class="dir-tab" data-content="23ret">Κέντρο → Πολυτεχνείο</button>
+      </div>
+      <div class="line-content active" id="line-18out-content">
+      <div class="terminals">
+        <div class="terminal-stop">
+          <div class="stop-icon start">▶</div>
+          <div class="stop-label">Πλατεία 1866<small>Αφετηρία · Κέντρο Χανίων</small></div>
+        </div>
+        <div class="terminal-stop">
+          <div class="stop-icon end">■</div>
+          <div class="stop-label">Καμπάνι<small>Τερματισμός · μέσω Κουνουπιδιανών</small></div>
+        </div>
+      </div>
+      <div class="timetable-section">
+        <div class="timetable-day">
+          <div class="day-label">Παρ 17/4</div>
+          <div class="times-grid">
+            <span class="time-chip">06:30</span><span class="time-chip">07:00</span><span class="time-chip">07:20</span><span class="time-chip hl">07:35★</span><span class="time-chip">07:40</span><span class="time-chip">07:50</span><span class="time-chip">08:00</span><span class="time-chip">08:15</span><span class="time-chip">08:30</span><span class="time-chip">08:45</span><span class="time-chip">09:00</span><span class="time-chip">09:15</span><span class="time-chip">09:30</span><span class="time-chip">09:45</span><span class="time-chip">10:00</span><span class="time-chip">10:30</span><span class="time-chip">11:00</span><span class="time-chip">11:30</span><span class="time-chip">12:00</span><span class="time-chip">12:30</span><span class="time-chip">13:00</span><span class="time-chip">13:30</span><span class="time-chip">14:00</span><span class="time-chip">14:30</span><span class="time-chip">15:00</span><span class="time-chip">15:30</span><span class="time-chip">16:00</span><span class="time-chip">16:30</span><span class="time-chip">17:00</span><span class="time-chip">17:30</span><span class="time-chip">18:00</span><span class="time-chip">18:30</span><span class="time-chip">19:10</span><span class="time-chip">19:50</span><span class="time-chip">20:30</span><span class="time-chip">21:10</span><span class="time-chip">21:30</span><span class="time-chip">22:00</span><span class="time-chip">22:45</span><span class="time-chip">23:30</span><span class="time-chip">00:30</span><span class="time-chip">01:30</span>
+          </div>
+          <div class="timetable-note">★ 07:35: μέσω Πολυτεχνείου</div>
+        </div>
+        <div class="timetable-day">
+          <div class="day-label">Σαβ 18/4</div>
+          <div class="times-grid">
+            <span class="time-chip">06:30</span><span class="time-chip">07:00</span><span class="time-chip">07:30</span><span class="time-chip">08:00</span><span class="time-chip">08:30</span><span class="time-chip">09:00</span><span class="time-chip">09:30</span><span class="time-chip">10:00</span><span class="time-chip">10:30</span><span class="time-chip">11:00</span><span class="time-chip">11:30</span><span class="time-chip">12:00</span><span class="time-chip">12:30</span><span class="time-chip">13:00</span><span class="time-chip">13:30</span><span class="time-chip">14:00</span><span class="time-chip">14:30</span><span class="time-chip">15:00</span><span class="time-chip">15:30</span><span class="time-chip">16:00</span><span class="time-chip">16:30</span><span class="time-chip">17:00</span><span class="time-chip">17:30</span><span class="time-chip">18:00</span><span class="time-chip">18:30</span><span class="time-chip">19:00</span><span class="time-chip">19:30</span><span class="time-chip">20:00</span><span class="time-chip">20:30</span><span class="time-chip">21:00</span><span class="time-chip">21:30</span><span class="time-chip">22:00</span><span class="time-chip">22:45</span><span class="time-chip">23:30</span><span class="time-chip">00:00</span><span class="time-chip">00:30</span><span class="time-chip">01:30</span>
+          </div>
+        </div>
+        <div class="timetable-day">
+          <div class="day-label">Κυρ 19/4</div>
+          <div class="times-grid">
+            <span class="time-chip">07:30</span><span class="time-chip">08:30</span><span class="time-chip">09:30</span><span class="time-chip">10:30</span><span class="time-chip">11:30</span><span class="time-chip">12:30</span><span class="time-chip">13:30</span><span class="time-chip">14:30</span><span class="time-chip">15:30</span><span class="time-chip">16:30</span><span class="time-chip">17:30</span><span class="time-chip">18:30</span><span class="time-chip">19:30</span><span class="time-chip">20:30</span><span class="time-chip">21:30</span><span class="time-chip">22:45</span><span class="time-chip">23:45</span>
+          </div>
+          <div class="timetable-note">Αφετηρία από Εθνική Τράπεζα</div>
+        </div>
+      </div>
+      </div><!-- /line-18out-content -->
+
+      <div class="line-content" id="line-18ret-content">
+      <div class="terminals">
+        <div class="terminal-stop">
+          <div class="stop-icon start">▶</div>
+          <div class="stop-label">Καμπάνι<small>Αφετηρία · μέσω Κουνουπιδιανών</div>
+        </div>
+        <div class="terminal-stop">
+          <div class="stop-icon end">■</div>
+          <div class="stop-label">Πλατεία 1866<small>Τερματισμός · κέντρο Χανίων</small></div>
+        </div>
+      </div>
+      <div class="timetable-section">
+        <div class="timetable-day">
+          <div class="day-label">Παρ 17/4</div>
+          <div class="timetable-note">Πρόσθεσε τα δρομολόγια αντίστροφης κατεύθυνσης</div>
+        </div>
+        <div class="timetable-day">
+          <div class="day-label">Σαβ 18/4</div>
+          <div class="timetable-note">Πρόσθεσε τα δρομολόγια αντίστροφης κατεύθυνσης</div>
+        </div>
+        <div class="timetable-day">
+          <div class="day-label">Κυρ 19/4</div>
+          <div class="timetable-note">Πρόσθεσε τα δρομολόγια αντίστροφης κατεύθυνσης</div>
+        </div>
+      </div>
+      </div><!-- /line-18ret-content -->
+
+      <div class="line-content" id="line-23out-content">
+        <div class="terminals">
+          <div class="terminal-stop">
+            <div class="stop-icon start">▶</div>
+            <div class="stop-label">Πολυτεχνείο Κρήτης<small>Αφετηρία</small></div>
+          </div>
+          <div class="terminal-stop">
+            <div class="stop-icon end">■</div>
+            <div class="stop-label">Αγορά / Πλ. 1866<small>Τερματισμός · κέντρο Χανίων</small></div>
+          </div>
+        </div>
+        <div class="timetable-section">
+          <div class="timetable-day">
+            <div class="day-label">Παρ 17/4</div>
+            <div class="times-grid">
+              <span class="time-chip">08:45</span><span class="time-chip">09:15</span><span class="time-chip">10:15</span><span class="time-chip">11:15</span><span class="time-chip">12:15</span><span class="time-chip">13:15</span><span class="time-chip">14:15</span><span class="time-chip">15:15</span><span class="time-chip">16:15</span><span class="time-chip">17:15</span><span class="time-chip">18:15</span><span class="time-chip">19:15</span>
+            </div>
+          </div>
+          <div class="timetable-day">
+            <div class="day-label">Σαβ 18/4</div>
+            <div class="timetable-note">Δεν πραγματοποιούνται δρομολόγια</div>
+          </div>
+          <div class="timetable-day">
+            <div class="day-label">Κυρ 19/4</div>
+            <div class="timetable-note">Δεν πραγματοποιούνται δρομολόγια</div>
+          </div>
+        </div>
+      </div><!-- /line-23out-content -->
+
+      <div class="line-content" id="line-23ret-content">
+        <div class="terminals">
+          <div class="terminal-stop">
+            <div class="stop-icon start">▶</div>
+            <div class="stop-label">Αγορά / Πλ. 1866<small>Αφετηρία · κέντρο Χανίων</small></div>
+          </div>
+          <div class="terminal-stop">
+            <div class="stop-icon end">■</div>
+            <div class="stop-label">Πολυτεχνείο Κρήτης<small>Τερματισμός</small></div>
+          </div>
+        </div>
+        <div class="timetable-section">
+          <div class="timetable-day">
+            <div class="day-label">Παρ 17/4</div>
+            <div class="timetable-note">Πρόσθεσε τα δρομολόγια</div>
+          </div>
+          <div class="timetable-day">
+            <div class="day-label">Σαβ 18/4</div>
+            <div class="timetable-note">Πρόσθεσε τα δρομολόγια</div>
+          </div>
+          <div class="timetable-day">
+            <div class="day-label">Κυρ 19/4</div>
+            <div class="timetable-note">Πρόσθεσε τα δρομολόγια</div>
+          </div>
+        </div>
+      </div><!-- /line-23ret-content -->
+    </div><!-- /bus-panel -->
+
+  </section>
+
+        </div>
+
+        <div class="footer">
+          <span class="footer-text">City map online...</span>
+          <div class="footer-dots">
+            <div class="status-dot"></div>
+            <div class="status-dot"></div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="taskbar">
+    <div class="taskbar-start">Start</div>
+    <div class="taskbar-sep"></div>
+    <div class="taskbar-item">Sightseeing.exe</div>
+    <div class="taskbar-clock" id="clock">--:--</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    window.addEventListener('load', function () {
+
+      const map = L.map('map', { center: [35.522, 24.050], zoom: 13 });
+
+      const tileOptions = {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd', maxZoom: 19,
+      };
+      const darkTileUrl  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+      let isDark = false;
+      let currentTile = L.tileLayer(lightTileUrl, tileOptions).addTo(map);
+
+      function makeIcon(emoji, iconFile) {
+        const inner = iconFile
+          ? `<img src="${iconFile}" style="width:22px;height:22px;transform:rotate(45deg);object-fit:contain;">`
+          : `<span style="transform:rotate(45deg);font-size:14px">${emoji}</span>`;
+        return L.divIcon({
+          className: '',
+          html: `<div style="
+            width:34px;height:34px;
+            background:linear-gradient(135deg,#2f2216,#4a3522);
+            border:2px solid rgba(255,220,100,0.5);
+            border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);
+            box-shadow:2px 2px 0 rgba(0,0,0,0.7),0 0 10px rgba(212,168,67,0.35);
+            display:flex;align-items:center;justify-content:center;">
+            ${inner}
+          </div>`,
+          iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-38],
+        });
+      }
+
+      function makeBusIcon(type) {
+        const c = type==='start'?'#22c55e':'#ef4444';
+        const l = type==='start'?'▶':'■';
+        return L.divIcon({
+          className:'',
+          html:`<div style="width:24px;height:24px;background:${c};border:2px solid rgba(255,255,255,0.25);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;box-shadow:2px 2px 0 rgba(0,0,0,0.6)">${l}</div>`,
+          iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-16],
+        });
+      }
+
+      // ── Γραμμή 18: Πλ. 1866 → Κουνουπιδιανά (αμφίδρομη) ──
+      const busLine18out = L.polyline([
+        [35.512930881286955,24.017439226428092],
+        [35.51248366606479,24.017459503341723],
+        [35.5125307855992,24.020173308485724],
+        [35.51362851519925,24.020371496763854],
+        [35.51413238969192,24.021513822614533],
+        [35.51335149999996,24.023088599999653],
+        [35.51208597149799,24.02592829366508],
+        [35.51095635976665,24.02840163875655],
+        [35.509905027885075,24.030381530230716],
+        [35.50979689999976,24.03090229999974],
+        [35.51009359051615,24.031165442065838],
+        [35.510342430906974,24.03082353181154],
+        [35.51135980253759,24.030803486638995],
+        [35.51236400000014,24.030913600000225],
+        [35.514441410775184,24.031058301555973],
+        [35.51540988634649,24.031117688324215],
+        [35.51580198794582,24.031584770863283],
+        [35.51618099321292,24.032146703008884],
+        [35.51677940391838,24.03273293682512],
+        [35.516556939508426,24.03398435847758],
+        [35.51607969615672,24.035176267447632],
+        [35.515344399999755,24.037330100000446],
+        [35.51493154278332,24.03852908518056],
+        [35.51482117533651,24.039053475918355],
+        [35.51486800000022,24.040929700000415],
+        [35.514862111661635,24.04254804940573],
+        [35.51477183848573,24.043475241305178],
+        [35.5146117018574,24.04437024669645],
+        [35.514297704004655,24.045492332540785],
+        [35.5136506,24.04709939999995],
+        [35.51320250279164,24.048630932479202],
+        [35.51323472350995,24.048993021827783],
+        [35.51325802416523,24.049205921614107],
+        [35.513298790947324,24.049327626294076],
+        [35.51335412527422,24.049495933801317],
+        [35.51356085728033,24.049714531618555],
+        [35.51397431969411,24.049937150532163],
+        [35.51489729999987,24.05027510000028],
+        [35.5168845854574,24.05133519629497],
+        [35.51815181479533,24.052161784741944],
+        [35.51953254524594,24.053084932713446],
+        [35.52010651728034,24.05408365060843],
+        [35.52078290884364,24.05534616112674],
+        [35.5207079631231,24.056213576992782],
+        [35.52026045198951,24.056750523650386],
+        [35.51960336151987,24.056965605226242],
+        [35.51939963029164,24.057157609275585],
+        [35.519353082027,24.057381799832207],
+        [35.5194812554613,24.057785035602386],
+        [35.51970548480417,24.057802033273568],
+        [35.52025809992176,24.05754993667032],
+        [35.5204725032745,24.05753608893899],
+        [35.52069563831547,24.057591978641295],
+        [35.520863399406075,24.057780668733685],
+        [35.520996231239685,24.058023003006973],
+        [35.52116583999895,24.058437934118107],
+        [35.521265590838254,24.05876703454108],
+        [35.52135157376112,24.05912482797799],
+        [35.521398261770884,24.059423612815824],
+        [35.52136502108049,24.0599943604015],
+        [35.52144966487926,24.06005548827545],
+        [35.52175331060413,24.059999592358597],
+        [35.52212919815866,24.060429606745707],
+        [35.52291892575491,24.061359840984803],
+        [35.52354736665959,24.06276641346915],
+        [35.52497039999982,24.06763840000009],
+        [35.525735612473035,24.069964945106342],
+        [35.526222995956935,24.071219412766272],
+        [35.52628768791156,24.071476501752215],
+        [35.52622398567268,24.071696241351535],
+        [35.52619650036576,24.07189194183981],
+        [35.526247599999834,24.072109099999906],
+        [35.52646029729492,24.072444209716448],
+        [35.526611872729305,24.0725432850403],
+        [35.52675035047481,24.072626267109616],
+        [35.52693685169596,24.072848724047095],
+        [35.527835653363,24.07357761925882],
+        [35.52901437828909,24.07446882683628],
+        [35.529603734259304,24.07487687969821],
+        [35.53112551376194,24.075684840558175],
+        [35.53161264729567,24.07610620622624],
+        [35.53247521085591,24.076565122821552],
+        [35.53307583815542,24.07676654735057],
+        [35.53375138977079,24.076999899535515],
+        [35.5344531279931,24.07708304801504],
+        [35.53509212396966,24.077138044517962],
+        [35.5356691740957,24.076908050704475],
+        [35.53584419971915,24.076959350756784],
+        [35.535905520573515,24.07718348424972],
+        [35.535903389570045,24.077408496790877],
+        [35.53579649122104,24.077590593988397],
+        [35.53572451523985,24.077826335365007],
+        [35.53573489576903,24.078040838832763],
+        [35.53578019878287,24.078255342299613],
+        [35.53594938018166,24.078716535742387],
+        [35.53617623056225,24.079309475356457],
+        [35.53625036796398,24.079579123073046],
+        [35.53599059690281,24.080577618234344],
+        [35.5357253864752,24.08121365847496],
+        [35.53522835554641,24.082161383086017],
+        [35.53481123603633,24.083572499090074],
+        [35.534681252158336,24.084197590822114],
+        [35.534612383319654,24.084844140225968],
+        [35.53469811497372,24.085115110194383],
+        [35.53481003871581,24.085343164818266],
+        [35.535188248605294,24.086139847752946],
+        [35.53567568015225,24.08671720995835],
+        [35.53642502564506,24.087037080097453],
+        [35.53764432278562,24.08724766693482]
+      ], { color: '#1f160e', weight: 3, opacity: 0.95 }).addTo(map);
+
+      const busLine18ret = L.polyline([
+        [35.53752209685965,24.087140378573935],
+        [35.53585090624352,24.086881203407945],
+        [35.53519244649075,24.08595684040574],
+        [35.534635089109685,24.084891319434778],
+        [35.534812520414185,24.08383316109901],
+        [35.535341995380264,24.081974336492877],
+        [35.535877100000235,24.081089100000046],
+        [35.536094725078584,24.080193732267908],
+        [35.53624250504417,24.079555856602077],
+        [35.53597930784024,24.07866634336672],
+        [35.53577600654305,24.07821611429857],
+        [35.53574731738341,24.077808800573155],
+        [35.535934396283174,24.07729458053406],
+        [35.53585456226252,24.076909870618476],
+        [35.535450436004,24.07704167301622],
+        [35.53466376571273,24.077143274737722],
+        [35.53373739435893,24.076944469049288],
+        [35.53258310000014,24.076525399999706],
+        [35.53120493776719,24.07567911534424],
+        [35.52949740556466,24.074827507409836],
+        [35.52780729999977,24.073418000000093],
+        [35.52693958483135,24.072858761114208],
+        [35.526386199999884,24.071398300000308],
+        [35.52493767152734,24.067338040985092],
+        [35.5237336113331,24.06314903593717],
+        [35.523036928218296,24.06146581954361],
+        [35.5222023999998,24.060373899999682],
+        [35.52184178084496,24.059949563049614],
+        [35.52176932134277,24.059600327952253],
+        [35.521429320324536,24.059488754754128],
+        [35.52142987364993,24.05924307110512],
+        [35.52117338054969,24.058338643619003],
+        [35.52081668113026,24.057685868660254],
+        [35.52043934101389,24.0574368442315],
+        [35.51988735233553,24.05765988858992],
+        [35.51947507828339,24.05773272924382],
+        [35.51937372938838,24.05733999612858],
+        [35.51974220949103,24.05690759517738],
+        [35.52027574193361,24.056648479357687],
+        [35.520804474725246,24.056111225677473],
+        [35.52080687277757,24.055520733755163],
+        [35.51991737749246,24.053766366090205],
+        [35.51945516136416,24.052975012946344],
+        [35.51746008386954,24.05169957181732],
+        [35.5152903000001,24.050338300000128],
+        [35.51360946358567,24.049756279376002],
+        [35.51320568715559,24.04886445424541],
+        [35.51409440000018,24.046213099999736],
+        [35.514813799999786,24.043560399999617],
+        [35.514988399999744,24.04033239999989],
+        [35.514853591302426,24.038736469048725],
+        [35.51562699999976,24.036754300000357],
+        [35.51677756600043,24.033572007934296],
+        [35.516811418265476,24.032817711114276],
+        [35.51551843145605,24.031174560049518],
+        [35.514662070874095,24.031076361377174],
+        [35.51279940000002,24.03078650000003],
+        [35.51104269574021,24.030815569048745],
+        [35.51047873121719,24.030701357540845],
+        [35.51021169892862,24.030200907934844],
+        [35.51155110000018,24.027324299999766],
+        [35.51258599999972,24.02498810000026],
+        [35.51369180000031,24.022552600000168],
+        [35.514169959547495,24.021415279113988],
+        [35.513949479701104,24.020814400031337],
+        [35.51375841373724,24.020423791556613],
+        [35.51395159999999,24.018402400000397],
+        [35.513712857494816,24.01730113518106],
+        [35.51329656228615,24.01748006362262],
+        [35.51281039999976,24.01740149999967]
+      ], { color: '#1f160e', weight: 2, opacity: 0.65, dashArray: '6 5' }).addTo(map);
+
+      // ── Γραμμή 23: Αγορά → Πολυτεχνείο Κρήτης (αμφίδρομη) ──
+      const busLine23out = L.polyline([
+        [35.51397500000007,24.021127999999823],
+        [35.514068000000215,24.021333999999822],
+        [35.514149999999695,24.021513000000276],
+        [35.514090999999894,24.021615999999828],
+        [35.5140719999999,24.02165699999963],
+        [35.514007999999976,24.02178999999987],
+        [35.513755999999816,24.02234600000012],
+        [35.51352599999993,24.022850999999733],
+        [35.51348699999998,24.022936999999672],
+        [35.51340200000005,24.02312299999981],
+        [35.51340200000005,24.02312299999981],
+        [35.51331700000009,24.023311000000113],
+        [35.51257100000027,24.02495399999968],
+        [35.51237600000029,24.025382000000107],
+        [35.51236400000014,24.02540999999973],
+        [35.512328999999724,24.025502000000163],
+        [35.512320999999766,24.025519999999858],
+        [35.51220900000001,24.025784000000172],
+        [35.51214400000016,24.02590300000015],
+        [35.512122000000126,24.025951999999716],
+        [35.512122000000126,24.025951999999716],
+        [35.51164199999983,24.027016999999912],
+        [35.5112080000001,24.027952000000113],
+        [35.51099199999991,24.02842699999994],
+        [35.51099199999991,24.02842699999994],
+        [35.51086499999992,24.028705999999698],
+        [35.51042900000033,24.029679000000357],
+        [35.51029300000005,24.0298410000003],
+        [35.51024700000004,24.02990300000005],
+        [35.510090000000154,24.03008199999961],
+        [35.51002799999966,24.03018700000022],
+        [35.50995200000004,24.03032399999989],
+        [35.50987600000015,24.030428999999607],
+        [35.50985899999993,24.030501000000182],
+        [35.50984500000003,24.030584999999956],
+        [35.50983699999974,24.030718000000196],
+        [35.509859999999804,24.030883000000387],
+        [35.509859999999804,24.030883000000387],
+        [35.50990399999981,24.03099900000012],
+        [35.509931999999964,24.03104300000017],
+        [35.50999499999968,24.03106999999971],
+        [35.510078999999934,24.031081999999806],
+        [35.51018500000013,24.031060999999863],
+        [35.51024599999983,24.03096700000016],
+        [35.51029199999969,24.030830999999676],
+        [35.51035499999993,24.030772000000177],
+        [35.510450999999904,24.03072700000004],
+        [35.511268999999956,24.0307999999998],
+        [35.5121499999997,24.03081999999966],
+        [35.5123679999999,24.03083700000017],
+        [35.5123679999999,24.03083700000017],
+        [35.51353499999993,24.030925000000273],
+        [35.51444399999997,24.031021000000145],
+        [35.51444399999997,24.031021000000145],
+        [35.51461900000025,24.03103999999992],
+        [35.51494899999998,24.03106999999971],
+        [35.515470000000285,24.031080999999727],
+        [35.5155469999997,24.031148999999967],
+        [35.51582800000007,24.031557999999716],
+        [35.51582800000007,24.031557999999716],
+        [35.51618099999976,24.032070999999995],
+        [35.51623300000007,24.032142999999667],
+        [35.51659399999984,24.032508000000263],
+        [35.51680799999988,24.032720999999945],
+        [35.516788000000304,24.03295599999965],
+        [35.51675299999968,24.03324999999975],
+        [35.51671599999982,24.03347999999994],
+        [35.516694000000115,24.033609999999932],
+        [35.516667000000005,24.03372699999974],
+        [35.516627999999926,24.033872000000077],
+        [35.51657699999988,24.03401300000008],
+        [35.51657800000019,24.03401500000024],
+        [35.516361000000295,24.034604999999715],
+        [35.516091000000245,24.03534199999969],
+        [35.51597600000033,24.035646999999802],
+        [35.515893999999925,24.035893999999605],
+        [35.515728000000266,24.036341999999888],
+        [35.515558000000254,24.03682899999981],
+        [35.515437000000304,24.037202000000168],
+        [35.5153859999997,24.037352000000016],
+        [35.5153859999997,24.037352000000016],
+        [35.51524499999998,24.03776999999961],
+        [35.51515699999984,24.038026000000155],
+        [35.515122999999754,24.03812300000011],
+        [35.51509800000014,24.038194999999785],
+        [35.51492599999966,24.038671999999774],
+        [35.51489700000008,24.038789999999672],
+        [35.514889000000075,24.038899999999803],
+        [35.51489000000021,24.03920399999983],
+        [35.51493300000004,24.039829000000406],
+        [35.5149539999997,24.040295000000384],
+        [35.51494399999991,24.04077399999964],
+        [35.51493300000004,24.040936999999673],
+        [35.51493300000004,24.040936999999673],
+        [35.51489900000014,24.04142399999959],
+        [35.51488200000025,24.041675999999807],
+        [35.51487400000022,24.042055999999846],
+        [35.51491500000025,24.042555999999948],
+        [35.51490200000013,24.042731000000074],
+        [35.51489000000021,24.04287600000041],
+        [35.51475199999994,24.04387400000044],
+        [35.51473799999994,24.043949000000367],
+        [35.51473799999994,24.043949000000367],
+        [35.51467200000026,24.044308999999647],
+        [35.514584999999684,24.044848000000282],
+        [35.51456199999965,24.044961999999845],
+        [35.514529000000074,24.045100999999683],
+        [35.514482000000015,24.04525700000003],
+        [35.51439000000029,24.0455000000004],
+        [35.51399499999995,24.046285999999938],
+        [35.51397299999966,24.046346999999603],
+        [35.51388999999984,24.04658400000037],
+        [35.513753000000136,24.047003000000046],
+        [35.51366600000033,24.04701700000031],
+        [35.513639999999995,24.047093000000316],
+        [35.513639999999995,24.047093000000316],
+        [35.51363000000034,24.047120999999944],
+        [35.51367699999976,24.04722699999974],
+        [35.51366900000031,24.047252000000018],
+        [35.51348699999998,24.047714999999744],
+        [35.51342799999992,24.047894000000205],
+        [35.513418000000186,24.047928000000326],
+        [35.513289000000185,24.048332999999744],
+        [35.51325700000016,24.048513000000277],
+        [35.513242000000304,24.04860399999973],
+        [35.51323399999992,24.04868999999967],
+        [35.51323299999963,24.04880400000013],
+        [35.51324299999975,24.049007999999965],
+        [35.513261999999976,24.049151000000133],
+        [35.51327899999997,24.049220999999644],
+        [35.51329299999995,24.049266999999862],
+        [35.51332600000013,24.0493529999998],
+        [35.5133849999998,24.049461999999846],
+        [35.51340900000023,24.04949800000013],
+        [35.51350900000034,24.049619000000273],
+        [35.513598000000215,24.04969899999972],
+        [35.513716000000294,24.04978300000039],
+        [35.51383400000025,24.0498470000003],
+        [35.514117999999925,24.049957999999613],
+        [35.51435700000018,24.050033999999624],
+        [35.514916000000056,24.050228999999607],
+        [35.514916000000056,24.050228999999607],
+        [35.514987999999725,24.050251999999716],
+        [35.515282,24.05038600000004],
+        [35.51553499999968,24.050510999999617],
+        [35.51629099999972,24.050894999999986],
+        [35.51645699999997,24.050982000000005],
+        [35.51650299999999,24.05100700000028],
+        [35.5166510000003,24.051111999999996],
+        [35.51679199999974,24.0512059999997],
+        [35.517033000000026,24.051366000000378],
+        [35.5171470000002,24.051444999999735],
+        [35.5171470000002,24.051444999999735],
+        [35.51749200000014,24.05168199999961],
+        [35.51761200000005,24.051768999999627],
+        [35.5176680000002,24.05182100000034],
+        [35.51852200000014,24.05238899999979],
+        [35.5191949999997,24.052784000000173],
+        [35.519355000000225,24.052895999999567],
+        [35.5194719999999,24.053004999999615],
+        [35.51957199999979,24.053123000000408],
+        [35.51965399999983,24.05324000000022],
+        [35.520583999999715,24.054880999999625],
+        [35.52070499999964,24.055079999999943],
+        [35.520774999999865,24.055240999999803],
+        [35.52081400000017,24.055377000000295],
+        [35.52083499999969,24.055504000000035],
+        [35.520843999999904,24.0556529999998],
+        [35.520837000000235,24.055798000000134],
+        [35.52081199999978,24.055945999999818],
+        [35.52076800000001,24.056094999999587],
+        [35.520716999999635,24.05621100000021],
+        [35.52065899999989,24.056313999999762],
+        [35.520561999999934,24.056448000000085],
+        [35.52041799999993,24.056593000000415],
+        [35.52033300000007,24.05667299999986],
+        [35.520203999999744,24.05677600000031],
+        [35.52010699999971,24.056849000000067],
+        [35.51999400000003,24.056909999999732],
+        [35.51991400000017,24.056939000000334],
+        [35.51981199999967,24.056961000000364],
+        [35.51958300000011,24.057013000000183],
+        [35.519517999999934,24.05703999999972],
+        [35.519464000000326,24.057084999999855],
+        [35.51941700000001,24.057156000000344],
+        [35.51938400000014,24.05725999999998],
+        [35.51937400000015,24.057341999999586],
+        [35.51938199999993,24.05742700000034],
+        [35.519396999999756,24.057511000000112],
+        [35.51942800000036,24.057593999999803],
+        [35.51946099999973,24.057657999999716],
+        [35.51951600000017,24.05771399999986],
+        [35.51957699999966,24.057747999999982],
+        [35.51963400000013,24.057758999999994],
+        [35.5197159999997,24.057756999999828],
+        [35.5197980000003,24.05773299999964],
+        [35.520130999999786,24.057590999999555],
+        [35.52026799999967,24.0575409999999],
+        [35.5204090000002,24.057505999999698],
+        [35.520524000000144,24.057513000000277],
+        [35.52061600000005,24.0575409999999],
+        [35.520674999999876,24.057569999999615],
+        [35.52072999999979,24.05760699999998],
+        [35.52080299999967,24.05767600000031],
+        [35.52085400000025,24.057747999999982],
+        [35.52093499999994,24.057881000000222],
+        [35.5210029999999,24.05801599999973],
+        [35.52106100000036,24.058143000000367],
+        [35.521131000000096,24.058305000000313],
+        [35.52123400000028,24.05857400000014],
+        [35.52130499999967,24.058806999999682],
+        [35.52132800000014,24.058884999999854],
+        [35.52138099999994,24.059070999999996],
+        [35.52141099999978,24.05923400000002],
+        [35.52140499999999,24.059486000000238],
+        [35.5214010000001,24.05962900000041],
+        [35.52138900000003,24.059788000000104],
+        [35.52142099999967,24.059880999999724],
+        [35.521438999999994,24.05991299999968],
+        [35.521486,24.0599410000002],
+        [35.52161500000028,24.059962000000148],
+        [35.521722000000246,24.059987999999606],
+        [35.521799000000094,24.060022999999813],
+        [35.52191099999965,24.060091000000053],
+        [35.522161999999724,24.060388000000405],
+        [35.522161999999724,24.060388000000405],
+        [35.522239000000056,24.060478999999855],
+        [35.52270299999996,24.061026000000258],
+        [35.52290499999989,24.06128299999999],
+        [35.52297699999971,24.061379999999943],
+        [35.523042999999824,24.061494999999585],
+        [35.52313600000004,24.061703999999835],
+        [35.523306000000204,24.06207900000036],
+        [35.523496999999736,24.06254400000025],
+        [35.52362300000001,24.062892000000335],
+        [35.52379500000013,24.063444000000253],
+        [35.52435800000011,24.065415000000044],
+        [35.524407000000124,24.065589000000088],
+        [35.524783999999634,24.066831999999753],
+        [35.52489300000014,24.06717699999959],
+        [35.525001000000366,24.067512999999582],
+        [35.52503000000007,24.067610999999612],
+        [35.52503000000007,24.067610999999612],
+        [35.52503600000012,24.067630000000293],
+        [35.525049999999695,24.067677999999777],
+        [35.525098999999756,24.06785700000023],
+        [35.525170000000145,24.06810999999963],
+        [35.525209999999895,24.06811999999956],
+        [35.52526399999972,24.068118000000293],
+        [35.525317000000115,24.06810800000036],
+        [35.52536999999989,24.068090999999853],
+        [35.52547599999967,24.068047999999884],
+        [35.525497000000314,24.068040000000117],
+        [35.52558099999983,24.068006],
+        [35.52562199999969,24.067999000000317],
+        [35.52566499999991,24.06799700000015],
+        [35.525706999999876,24.068001999999666],
+        [35.52574799999965,24.068011999999598],
+        [35.52577600000017,24.068022000000422],
+        [35.52581299999976,24.068021000000343],
+        [35.525849000000285,24.068006],
+        [35.52587899999982,24.06797899999956],
+        [35.525902999999985,24.06793200000016],
+        [35.52591099999969,24.067894999999787],
+        [35.52591099999969,24.06785700000023],
+        [35.525902999999985,24.06781999999986],
+        [35.52588699999969,24.06778699999982],
+        [35.52615699999985,24.06765000000015],
+        [35.52615699999985,24.06765000000015],
+        [35.52624899999972,24.067595000000082],
+        [35.52645399999995,24.06746700000026],
+        [35.52665699999971,24.067330999999776],
+        [35.526786999999764,24.06720700000028],
+        [35.526878999999695,24.067055000000266],
+        [35.52690400000018,24.066987000000022],
+        [35.52692100000035,24.06694299999997],
+        [35.52725400000034,24.066071999999675],
+        [35.52727299999973,24.066026000000356],
+        [35.52736199999968,24.065864000000413],
+        [35.52747399999994,24.0657530000002],
+        [35.52763499999966,24.065625999999558],
+        [35.52822599999978,24.06513300000004],
+        [35.52839400000019,24.065044999999934],
+        [35.52853600000002,24.065025000000073],
+        [35.52868900000024,24.06502700000024],
+        [35.52880599999968,24.065069000000125],
+        [35.52893499999971,24.06513300000004],
+        [35.52906800000029,24.065252000000015],
+        [35.52922800000031,24.065469000000025],
+        [35.529425999999894,24.065768999999726],
+        [35.52938400000034,24.065843999999654],
+        [35.52938400000034,24.065843999999654],
+        [35.529425999999894,24.065768999999726],
+        [35.530098000000315,24.066761000000163],
+        [35.5302170000002,24.066898999999918],
+        [35.53035000000024,24.06696700000016],
+        [35.530482999999855,24.066993999999706],
+        [35.53062599999971,24.06701699999981],
+        [35.53114799999971,24.066835000000005],
+        [35.53128499999987,24.066786999999618],
+        [35.53159999999997,24.066692999999916],
+        [35.53176100000002,24.06671000000043],
+        [35.53192100000017,24.066778999999855],
+        [35.53205799999995,24.066863999999715],
+        [35.532095999999996,24.066916000000425],
+        [35.53220800000034,24.067046000000417],
+        [35.53220800000034,24.067046000000417],
+        [35.532252000000234,24.067098000000232],
+        [35.53302900000007,24.068042000000286],
+        [35.533173999999754,24.068216000000326],
+        [35.53325600000023,24.068347999999585],
+        [35.53330300000011,24.068558999999997],
+        [35.53330399999963,24.06869300000032],
+        [35.53322899999979,24.069041000000404],
+        [35.53322899999979,24.069041000000404],
+        [35.53319599999992,24.0691939999996],
+        [35.53310500000027,24.06956900000013],
+        [35.53307900000032,24.069673999999843],
+        [35.53302900000007,24.06965999999958],
+        [35.53297700000022,24.06966700000016],
+        [35.532930000000164,24.069693999999703],
+        [35.532892999999916,24.06973899999984],
+        [35.53287000000018,24.069796000000068],
+        [35.53286299999972,24.069858999999898],
+        [35.53287300000029,24.069921999999725],
+        [35.53289999999994,24.069976999999792],
+        [35.53258300000032,24.070376999999695],
+        [35.532501999999894,24.070470000000213],
+        [35.532303999999925,24.070718000000095],
+        [35.532303999999925,24.070718000000095],
+        [35.5321610000001,24.070896999999654],
+        [35.53206499999972,24.071007999999864],
+        [35.531980000000075,24.071106999999984],
+        [35.53186000000006,24.071179999999742],
+        [35.53175400000002,24.071224999999878],
+        [35.53165300000008,24.071241000000303],
+        [35.531467000000205,24.071253000000397],
+        [35.5310650000002,24.071247999999986],
+        [35.53090700000033,24.07121099999961],
+        [35.530766999999706,24.071127999999923],
+        [35.530664999999836,24.071024000000293],
+        [35.53054899999986,24.07088599999964],
+        [35.53006299999984,24.07028299999999],
+        [35.52990600000019,24.070161999999847],
+        [35.52978700000033,24.070104999999618],
+        [35.52970899999977,24.070082999999592],
+        [35.529607000000055,24.070054999999964],
+        [35.529487000000216,24.07005000000045],
+        [35.529368999999924,24.0700590000003],
+        [35.529274999999934,24.07009100000025],
+        [35.529192000000194,24.07011999999996],
+        [35.529074000000364,24.070179000000355],
+        [35.52898399999993,24.070251000000034],
+        [35.5288629999997,24.070354999999665],
+        [35.52877899999965,24.07047499999973],
+        [35.52872399999982,24.070577000000092],
+        [35.52866900000031,24.070685000000058],
+        [35.528545,24.07098599999984],
+        [35.52849199999974,24.071117999999995],
+        [35.52849199999974,24.071117999999995],
+        [35.52847600000026,24.071156999999634],
+        [35.528428000000176,24.071268999999926],
+        [35.52838899999984,24.071350000000347],
+        [35.528309000000085,24.071488000000105],
+        [35.52819699999995,24.07158500000006],
+        [35.528070999999805,24.071658999999897],
+        [35.527940999999956,24.071696000000266],
+        [35.52779300000034,24.071705000000115],
+        [35.52763900000026,24.071658999999897],
+        [35.527440000000034,24.07158500000006],
+        [35.52731599999987,24.071564000000112],
+        [35.5271499999998,24.07157600000021],
+        [35.526983999999885,24.071628000000025],
+        [35.52680800000021,24.07172299999981],
+        [35.52666475753222,24.071833559524595]
+      ], { color: '#1f160e', weight: 3, opacity: 0.95 });
+
+      const busLine23ret = L.polyline([
+        [35.526787,24.071737],
+        [35.526808,24.071723],
+        [35.526984,24.071628],
+        [35.526805,24.071226],
+        [35.526759,24.071227],
+        [35.526717,24.071208],
+        [35.526661,24.071174],
+        [35.526549,24.071078],
+        [35.526549,24.071078],
+        [35.526498,24.071034],
+        [35.526431,24.070975],
+        [35.526377,24.070914],
+        [35.526325,24.070831],
+        [35.526269,24.070741],
+        [35.526153,24.070526],
+        [35.526027,24.070275],
+        [35.525887,24.069854],
+        [35.52582,24.069635],
+        [35.525785,24.0695],
+        [35.525768,24.069387],
+        [35.525764,24.069271],
+        [35.525772,24.069187],
+        [35.525826,24.068765],
+        [35.525855,24.068294],
+        [35.525881,24.068064],
+        [35.525879,24.067979],
+        [35.525903,24.067932],
+        [35.525911,24.067895],
+        [35.525911,24.067857],
+        [35.525903,24.06782],
+        [35.525887,24.067787],
+        [35.526157,24.06765],
+        [35.526157,24.06765],
+        [35.526249,24.067595],
+        [35.526454,24.067467],
+        [35.526657,24.067331],
+        [35.526787,24.067207],
+        [35.526879,24.067055],
+        [35.526904,24.066987],
+        [35.526921,24.066943],
+        [35.527254,24.066072],
+        [35.527273,24.066026],
+        [35.527362,24.065864],
+        [35.527474,24.065753],
+        [35.527635,24.065626],
+        [35.528226,24.065133],
+        [35.528394,24.065045],
+        [35.528536,24.065025],
+        [35.528689,24.065027],
+        [35.528806,24.065069],
+        [35.528935,24.065133],
+        [35.529068,24.065252],
+        [35.529228,24.065469],
+        [35.529426,24.065769],
+        [35.529384,24.065844],
+        [35.529384,24.065844],
+        [35.529426,24.065769],
+        [35.530098,24.066761],
+        [35.530217,24.066899],
+        [35.53035,24.066967],
+        [35.530483,24.066994],
+        [35.530626,24.067017],
+        [35.531148,24.066835],
+        [35.531285,24.066787],
+        [35.5316,24.066693],
+        [35.531761,24.06671],
+        [35.531921,24.066779],
+        [35.532058,24.066864],
+        [35.532096,24.066916],
+        [35.532208,24.067046],
+        [35.532208,24.067046],
+        [35.532252,24.067098],
+        [35.533029,24.068042],
+        [35.533174,24.068216],
+        [35.533256,24.068348],
+        [35.533303,24.068559],
+        [35.533304,24.068693],
+        [35.533229,24.069041],
+        [35.533229,24.069041],
+        [35.533196,24.069194],
+        [35.533105,24.069569],
+        [35.533079,24.069674],
+        [35.533029,24.06966],
+        [35.532977,24.069667],
+        [35.53293,24.069694],
+        [35.532893,24.069739],
+        [35.53287,24.069796],
+        [35.532863,24.069859],
+        [35.532873,24.069922],
+        [35.5329,24.069977],
+        [35.532583,24.070377],
+        [35.532502,24.07047],
+        [35.532304,24.070718],
+        [35.532304,24.070718],
+        [35.532161,24.070897],
+        [35.532065,24.071008],
+        [35.53198,24.071107],
+        [35.53186,24.07118],
+        [35.531754,24.071225],
+        [35.531653,24.071241],
+        [35.531467,24.071253],
+        [35.531065,24.071248],
+        [35.530907,24.071211],
+        [35.530767,24.071128],
+        [35.530665,24.071024],
+        [35.530549,24.070886],
+        [35.530063,24.070283],
+        [35.529906,24.070162],
+        [35.529787,24.070105],
+        [35.529709,24.070083],
+        [35.529607,24.070055],
+        [35.529487,24.07005],
+        [35.529369,24.070059],
+        [35.529275,24.070091],
+        [35.529192,24.07012],
+        [35.529074,24.070179],
+        [35.528984,24.070251],
+        [35.528863,24.070355],
+        [35.528779,24.070475],
+        [35.528724,24.070577],
+        [35.528669,24.070685],
+        [35.528545,24.070986],
+        [35.528492,24.071118],
+        [35.528492,24.071118],
+        [35.528476,24.071157],
+        [35.528428,24.071269],
+        [35.528389,24.07135],
+        [35.528309,24.071488],
+        [35.528197,24.071585],
+        [35.528071,24.071659],
+        [35.527941,24.071696],
+        [35.527793,24.071705],
+        [35.527639,24.071659],
+        [35.52744,24.071585],
+        [35.527316,24.071564],
+        [35.52715,24.071576],
+        [35.526984,24.071628],
+        [35.526805,24.071226],
+        [35.526759,24.071227],
+        [35.526717,24.071208],
+        [35.526661,24.071174],
+        [35.526549,24.071078],
+        [35.526549,24.071078],
+        [35.526498,24.071034],
+        [35.526431,24.070975],
+        [35.526377,24.070914],
+        [35.526325,24.070831],
+        [35.526269,24.070741],
+        [35.526153,24.070526],
+        [35.526027,24.070275],
+        [35.525887,24.069854],
+        [35.52582,24.069635],
+        [35.525785,24.0695],
+        [35.525768,24.069387],
+        [35.525764,24.069271],
+        [35.525772,24.069187],
+        [35.525826,24.068765],
+        [35.525855,24.068294],
+        [35.525881,24.068064],
+        [35.525879,24.067979],
+        [35.525903,24.067932],
+        [35.525911,24.067895],
+        [35.525911,24.067857],
+        [35.525903,24.06782],
+        [35.525887,24.067787],
+        [35.525861,24.067757],
+        [35.525828,24.067737],
+        [35.525793,24.067731],
+        [35.525757,24.067738],
+        [35.525725,24.067758],
+        [35.525699,24.067789],
+        [35.525673,24.067824],
+        [35.525648,24.067847],
+        [35.52562,24.067867],
+        [35.525468,24.067927],
+        [35.525447,24.067935],
+        [35.525341,24.067977],
+        [35.525289,24.067975],
+        [35.525239,24.06796],
+        [35.525192,24.067932],
+        [35.525152,24.067893],
+        [35.525119,24.067844],
+        [35.52505,24.067678],
+        [35.525036,24.06763],
+        [35.525001,24.067513],
+        [35.524893,24.067177],
+        [35.524784,24.066832],
+        [35.524407,24.065589],
+        [35.524358,24.065415],
+        [35.523795,24.063444],
+        [35.523623,24.062892],
+        [35.523497,24.062544],
+        [35.523306,24.062079],
+        [35.523136,24.061704],
+        [35.523043,24.061495],
+        [35.522977,24.06138],
+        [35.522905,24.061283],
+        [35.522703,24.061026],
+        [35.522177,24.060406],
+        [35.522177,24.060406],
+        [35.521911,24.060091],
+        [35.521838,24.059933],
+        [35.521799,24.059761],
+        [35.521775,24.059635],
+        [35.521742,24.059584],
+        [35.521694,24.059554],
+        [35.521576,24.059525],
+        [35.521532,24.059498],
+        [35.521495,24.05946],
+        [35.521456,24.059385],
+        [35.521411,24.059234],
+        [35.521381,24.059071],
+        [35.521328,24.058885],
+        [35.521305,24.058807],
+        [35.521234,24.058574],
+        [35.521131,24.058305],
+        [35.521061,24.058143],
+        [35.521003,24.058016],
+        [35.520935,24.057881],
+        [35.520854,24.057748],
+        [35.520803,24.057676],
+        [35.52073,24.057607],
+        [35.520675,24.05757],
+        [35.520616,24.057541],
+        [35.520524,24.057513],
+        [35.520409,24.057506],
+        [35.520268,24.057541],
+        [35.520131,24.057591],
+        [35.519798,24.057733],
+        [35.519716,24.057757],
+        [35.519634,24.057759],
+        [35.519577,24.057748],
+        [35.519516,24.057714],
+        [35.519461,24.057658],
+        [35.519428,24.057594],
+        [35.519397,24.057511],
+        [35.519382,24.057427],
+        [35.519374,24.057342],
+        [35.519384,24.05726],
+        [35.519417,24.057156],
+        [35.519464,24.057085],
+        [35.519518,24.05704],
+        [35.519583,24.057013],
+        [35.519812,24.056961],
+        [35.519914,24.056939],
+        [35.519994,24.05691],
+        [35.520107,24.056849],
+        [35.520204,24.056776],
+        [35.520333,24.056673],
+        [35.520418,24.056593],
+        [35.520562,24.056448],
+        [35.520659,24.056314],
+        [35.520717,24.056211],
+        [35.520768,24.056095],
+        [35.520812,24.055946],
+        [35.520837,24.055798],
+        [35.520844,24.055653],
+        [35.520835,24.055504],
+        [35.520814,24.055377],
+        [35.520775,24.055241],
+        [35.520705,24.05508],
+        [35.520584,24.054881],
+        [35.519654,24.05324],
+        [35.519572,24.053123],
+        [35.519472,24.053005],
+        [35.519355,24.052896],
+        [35.519195,24.052784],
+        [35.518522,24.052389],
+        [35.517668,24.051821],
+        [35.517612,24.051769],
+        [35.517492,24.051682],
+        [35.517033,24.051366],
+        [35.516792,24.051206],
+        [35.516651,24.051112],
+        [35.516503,24.051007],
+        [35.516457,24.050982],
+        [35.516291,24.050895],
+        [35.515535,24.050511],
+        [35.515282,24.050386],
+        [35.515276,24.050383],
+        [35.514988,24.050252],
+        [35.514916,24.050229],
+        [35.514357,24.050034],
+        [35.514118,24.049958],
+        [35.513834,24.049847],
+        [35.513716,24.049783],
+        [35.513598,24.049699],
+        [35.513509,24.049619],
+        [35.513409,24.049498],
+        [35.513385,24.049462],
+        [35.513326,24.049353],
+        [35.513293,24.049267],
+        [35.513279,24.049221],
+        [35.513262,24.049151],
+        [35.513243,24.049008],
+        [35.513233,24.048804],
+        [35.513234,24.04869],
+        [35.513242,24.048604],
+        [35.513257,24.048513],
+        [35.513289,24.048333],
+        [35.513418,24.047928],
+        [35.513428,24.047894],
+        [35.513487,24.047715],
+        [35.513669,24.047252],
+        [35.513677,24.047227],
+        [35.513753,24.047003],
+        [35.51389,24.046584],
+        [35.513973,24.046347],
+        [35.513995,24.046286],
+        [35.514049,24.046179],
+        [35.514049,24.046179],
+        [35.51439,24.0455],
+        [35.514482,24.045257],
+        [35.514529,24.045101],
+        [35.514562,24.044962],
+        [35.514585,24.044848],
+        [35.514672,24.044309],
+        [35.514752,24.043874],
+        [35.514796,24.043556],
+        [35.514796,24.043556],
+        [35.51489,24.042876],
+        [35.514902,24.042731],
+        [35.514915,24.042556],
+        [35.514874,24.042056],
+        [35.514882,24.041676],
+        [35.514899,24.041424],
+        [35.514918,24.041153],
+        [35.514944,24.040774],
+        [35.514953,24.040331],
+        [35.514953,24.040331],
+        [35.514954,24.040295],
+        [35.514933,24.039829],
+        [35.51489,24.039204],
+        [35.514889,24.0389],
+        [35.514897,24.03879],
+        [35.514926,24.038672],
+        [35.515098,24.038195],
+        [35.515123,24.038123],
+        [35.515157,24.038026],
+        [35.515245,24.03777],
+        [35.515437,24.037202],
+        [35.515558,24.036829],
+        [35.515591,24.036735],
+        [35.515591,24.036735],
+        [35.515728,24.036342],
+        [35.515894,24.035894],
+        [35.515976,24.035647],
+        [35.516091,24.035342],
+        [35.516361,24.034605],
+        [35.516578,24.034015],
+        [35.516577,24.034013],
+        [35.516628,24.033872],
+        [35.516667,24.033727],
+        [35.516694,24.03361],
+        [35.516716,24.03348],
+        [35.516753,24.03325],
+        [35.516788,24.032956],
+        [35.516808,24.032721],
+        [35.516594,24.032508],
+        [35.516233,24.032143],
+        [35.516181,24.032071],
+        [35.515547,24.031149],
+        [35.51547,24.031081],
+        [35.514949,24.03107],
+        [35.51474,24.031051],
+        [35.51474,24.031051],
+        [35.514619,24.03104],
+        [35.513535,24.030925],
+        [35.512795,24.030869],
+        [35.512795,24.030869],
+        [35.51215,24.03082],
+        [35.511269,24.0308],
+        [35.510451,24.030727],
+        [35.510402,24.030689],
+        [35.510369,24.030663],
+        [35.510308,24.030598],
+        [35.510305,24.03057],
+        [35.510307,24.030456],
+        [35.510307,24.030456],
+        [35.510308,24.030392],
+        [35.510301,24.030224],
+        [35.510298,24.030133],
+        [35.510327,24.029952],
+        [35.510429,24.029679],
+        [35.510865,24.028706],
+        [35.511208,24.027952],
+        [35.511512,24.027297],
+        [35.511512,24.027297],
+        [35.511642,24.027017],
+        [35.512144,24.025903],
+        [35.512209,24.025784],
+        [35.512321,24.02552],
+        [35.512329,24.025502],
+        [35.512364,24.02541],
+        [35.512376,24.025382],
+        [35.512563,24.024972],
+        [35.512563,24.024972],
+        [35.512571,24.024954],
+        [35.513317,24.023311],
+        [35.513526,24.022851],
+        [35.513669,24.022537],
+        [35.513669,24.022537],
+        [35.513756,24.022346],
+        [35.514008,24.02179],
+        [35.514072,24.021657],
+        [35.514091,24.021616],
+        [35.51415,24.021513],
+        [35.514211,24.021433],
+        [35.514143,24.021284],
+        [35.514009,24.020996],
+        [35.514009,24.020996],
+        [35.514,24.020976],
+        [35.513878,24.020712],
+        [35.513838,24.020603],
+        [35.513828,24.020575],
+        [35.513796,24.020464],
+        [35.513762,24.020352],
+        [35.51379,24.020003],
+        [35.513809,24.019777],
+        [35.513847,24.019363],
+        [35.513892,24.018945],
+        [35.513913,24.018729],
+        [35.513919,24.018558],
+        [35.513906,24.018408],
+        [35.513906,24.018408],
+        [35.513889,24.018206],
+        [35.513821,24.017701],
+        [35.513802,24.017604],
+        [35.513764,24.017472],
+        [35.513712,24.017284],
+        [35.513558,24.016701],
+        [35.513407,24.0161],
+        [35.513336,24.015733]
+      ], { color: '#1f160e', weight: 2, opacity: 0.65, dashArray: '6 5' });
+
+      // Terminal markers — Line 18 (visible by default)
+      const marker18start = L.marker([35.512930881286955,24.017439226428092],{icon:makeBusIcon('start')}).addTo(map)
+        .bindPopup(`<div class="popup-card"><div class="popup-title"><span class="dot"></span>Πλατεία 1866</div><div class="popup-desc">Αφετηρία γραμμής 18</div></div>`);
+      const marker18end = L.marker([35.53764432278562,24.08724766693482],{icon:makeBusIcon('end')}).addTo(map)
+        .bindPopup(`<div class="popup-card"><div class="popup-title"><span class="dot"></span>Κουνουπιδιανά</div><div class="popup-desc">Τερματισμός γραμμής 18</div></div>`);
+
+      // Terminal markers — Line 23 (hidden initially)
+      const marker23start = L.marker([35.51397500000007,24.021127999999823],{icon:makeBusIcon('start')})
+        .bindPopup(`<div class="popup-card"><div class="popup-title"><span class="dot"></span>Αγορά / Ρολόι</div><div class="popup-desc">Αφετηρία γραμμής 23</div></div>`);
+      const marker23end = L.marker([35.526787,24.071737],{icon:makeBusIcon('end')})
+        .bindPopup(`<div class="popup-card"><div class="popup-title"><span class="dot"></span>Πολυτεχνείο Κρήτης</div><div class="popup-desc">Τερματισμός γραμμής 23</div></div>`);
+
+      // Line tab switching
+      function activateContent(contentId) {
+        document.querySelectorAll('.line-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('line-' + contentId + '-content').classList.add('active');
+      }
+
+      document.querySelectorAll('.line-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+          const line = this.dataset.line;
+          document.querySelectorAll('.line-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          // Show correct dir-tabs row
+          document.getElementById('dir-tabs-18').style.display = line === '18' ? '' : 'none';
+          document.getElementById('dir-tabs-23').style.display = line === '23' ? '' : 'none';
+          // Activate the currently-active dir-tab for that line
+          const activeDirTab = document.querySelector('#dir-tabs-' + line + ' .dir-tab.active');
+          const contentId = activeDirTab ? activeDirTab.dataset.content : line + 'out';
+          activateContent(contentId);
+          // Map layers
+          const is18 = line === '18';
+          if (is18) {
+            [busLine23out, busLine23ret].forEach(l => { if (l && map.hasLayer(l)) map.removeLayer(l); });
+            if (map.hasLayer(marker23start)) marker23start.remove();
+            if (map.hasLayer(marker23end)) marker23end.remove();
+            busLine18out.addTo(map); busLine18ret.addTo(map);
+            marker18start.addTo(map); marker18end.addTo(map);
+          } else {
+            [busLine18out, busLine18ret].forEach(l => { if (l && map.hasLayer(l)) map.removeLayer(l); });
+            if (map.hasLayer(marker18start)) marker18start.remove();
+            if (map.hasLayer(marker18end)) marker18end.remove();
+            busLine23out.addTo(map); busLine23ret.addTo(map);
+            marker23start.addTo(map); marker23end.addTo(map);
+          }
+          document.getElementById('active-badge').textContent = line;
+          updateRouteDesc(contentId);
+        });
+      });
+
+      document.querySelectorAll('.dir-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+          const siblings = this.parentElement.querySelectorAll('.dir-tab');
+          siblings.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          const contentId = this.dataset.content;
+          activateContent(contentId);
+          updateRouteDesc(contentId);
+        });
+      });
+
+      function updateRouteDesc(contentId) {
+        const descs = {
+          '18out': 'Πλ. 1866 → Καμπάνι (γρ. 18)',
+          '18ret': 'Καμπάνι → Πλ. 1866 (γρ. 18)',
+          '23out': 'Πολυτεχνείο → κέντρο (γρ. 23)',
+          '23ret': 'Κέντρο → Πολυτεχνείο (γρ. 23)',
+        };
+        document.getElementById('active-route-desc').textContent = descs[contentId] || '';
+      }
+      // POI locations
+      const locations = [
+        // ── Μαγαζιά ──────────────────────────────────────────────────────
+        { coords:[35.5167190,24.0252140], category:['kafe','poto'], 
+          gmaps:'https://maps.google.com/?q=35.5167190,24.0252140', 
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweq-Gb2h2-lHzbBnpUNjtH3r8jc9YnReAfiHBDLYa3-NBSbVOMJVxck6z3ErQyH4xkevLYp4rCUy51_nRbwU--HtulskZcBzgLvDTT61Gv5Nj30-M9Jm05iD9vtp2bsinPv-jCnig7PBlmmx=w426-h240-k-no',
+          title:'Μικρό Καφέ', emoji:'☕', discount:'−20%', icon:'icons/mikro-kafe.png' },
+        { coords:[35.5129180,24.0198658], category:'fagito',
+          gmaps:'https://maps.google.com/?q=35.5129180,24.0198658',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAwerpOb4VE8xI3dtK6vtMDHZpLB1cOllBR5HOOSxzwW-BarBR4j0euWB5Lx8Bu1ppIrWLVBc_rpHG-n6uLLiwTjrzj1ZPRTV0NJgrzfaO-sbHystDXUpxs37BIqRmXGkl5nlMESoP=w408-h306-k-no',
+          title:'Μπουγάτσα Ιορδάνης', emoji:'🥐', discount:'−18%', icon:'icons/bougatsa.png' },
+        { coords:[35.5104007,24.0252269], category:'kafe',
+          gmaps:'https://maps.google.com/?q=35.5104007,24.0252269',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAwepuoD3DAZXGUuJaHyYRq1u2oC-YvAY8KT3grmzRdnsCS3EHmVm5OSBw8zOFPdcsYg6nD8_G2CCsZyjj6Z3oytHmMsZ9Zq3q8oXSt4NpuQ6s7VClOv1cReDFuiLHxM-TBk_cCVzT=w408-h306-k-no',
+          title:'Kross Coffee Roasters – Νεάρχου', emoji:'☕', discount:'−10%', icon:'icons/kross.png' },
+        { coords:[35.5151864,24.0210644], category:'kafe',
+          gmaps:'https://maps.google.com/?q=35.5151864,24.0210644',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweqLxcsvlL8MZaISRQd41CmGmLx_1Yr5VO_KfsgU5iDhhAxGwHR17sgvqdeWjhMeudzMD4ZSKfL2tODJqvv1Mt5vBMnPpY4Kwy5YNi7A8V5sZCO8NmNioxzHzEuE4KYO2VWPATrP=w408-h306-k-no',
+          title:'Kross Coffee Roasters – Τσουδερών', emoji:'☕', discount:'−10%', icon:'icons/kross.png' },
+        { coords:[35.51451706666937,24.01350691795588], category:'kafe',
+          gmaps:'https://maps.google.com/?q=35.51451706666937,24.01350691795588',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweovmR__0JVVkGFvgISaFgjg_hoqRbStS-6x7kMLXpkGuSvJ8XFqg8muqjIHztIuz3hzeJ0J_ceYe_knucF0KQNgNqxR2P3xzWgaM3YwLmhmt5NzEUAT1mqETs6KStCyHDfrpTRAu1FSMW3u=w408-h544-k-no',
+          title:'Kross Coffee Roasters – Νέα Χώρα', emoji:'☕', discount:'−10%', icon:'icons/kross.png' },
+        { coords:[35.5182903,24.0228003], category:'poto',
+          gmaps:'https://maps.google.com/?q=35.5182903,24.0228003',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAwern4yw1_2rEV4H8fWdrqg05rdpF8jkByOV9YLod3e5SPYXovPOLqOYvkQHylrpokvvSa8K3gqB56w8jJm-fLSn6NXBO4s56ccDzyxK--t_WNqnVpfuQSZcl9GpMBaUzxxheC1Qm=w426-h240-k-no',
+          title:'Τα Δύο Λουξ', emoji:'✨', discount:'−10%', icon:'icons/dyo-loux.svg' },
+        { coords:[35.528517395950985,24.073780247419222], category:'fagito',
+          gmaps:'https://maps.google.com/?q=35.528517,24.073780',
+          photo:'https://maps.app.goo.gl/oPLSM4asaDtZ4ZRT7',
+          title:'Γουρουνάκια', emoji:'🍖', discount:'−10%', icon:'icons/gourounakia.svg' },
+        // ── Αξιοθέατα ────────────────────────────────────────────────────
+        { coords:[35.5292719782402,24.068645732324143], category:'aksiotheato',
+          gmaps:'https://maps.google.com/?q=35.529272,24.068646', photo:null,
+          title:'Πολυτεχνείο Κρήτης', emoji:'🎓', icon:'icons/polytechneio.png' },
+        { coords:[35.519569945218564,24.016703087166775], category:'aksiotheato',
+          gmaps:'https://maps.google.com/?q=35.519570,24.016703',
+          photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Chania_Lighthouse.jpg',
+          title:'Ενετικός Φάρος', emoji:'🏛️', icon:'icons/faros.svg' },
+        { coords:[35.5245,24.0560], category:'aksiotheato',
+          gmaps:'https://maps.google.com/?q=35.5245,24.0560',
+          photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Venizelos_graves_Chania.jpg',
+          title:'Τάφοι Βενιζέλων', emoji:'🌅', icon:'icons/venizeloi.svg' },
+        { coords:[35.51417003729222,24.020348638502128], category:'aksiotheato',
+          gmaps:'https://maps.google.com/?q=35.514170,24.020349',
+          photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Chania_covered_market.jpg',
+          title:'Δημοτική Αγορά Χανίων', emoji:'🏛️', icon:'icons/agora.svg' },
+      ];
+
+      const poiMarkers = [];
+      const cardEls    = [];
+      const venueScrollEl = document.querySelector('.venue-panel .venue-grid');
+
+      // Build map markers
+      locations.forEach(({ coords, title, emoji, icon, gmaps, photo, discount }, i) => {
+        const photoHtml    = photo
+          ? `<img class="popup-photo" src="${photo}" alt="${title}" onerror="this.style.display='none'">`
+          : '';
+        const discountHtml = discount
+          ? `<span class="popup-discount">🎟️ <strong>${discount} για συνέδρους</strong></span>`
+          : '';
+        const gmapsHtml    = `<a class="popup-gmaps" href="${gmaps}" target="_blank" rel="noopener">📍 Google Maps</a>`;
+        const bodyHtml     = `<div class="popup-title"><span class="dot"></span>${title}</div>${discountHtml}<div style="padding-top:0.4rem">${gmapsHtml}</div>`;
+        const content   = photo
+          ? `<div class="popup-card" style="padding:0">${photoHtml}<div style="padding:0.85rem 1rem">${bodyHtml}</div></div>`
+          : `<div class="popup-card">${bodyHtml}</div>`;
+        const popup  = L.popup({ closeButton:true, autoClose:true, closeOnClick:false, offset:[0,-4] }).setContent(content);
+        const marker = L.marker(coords, { icon: makeIcon(emoji, icon) }).addTo(map).bindPopup(popup);
+        marker.on('click', function() {
+          map.flyTo(coords, 16, { animate:true, duration:0.8 });
+          setTimeout(() => this.openPopup(), 850);
+          // Highlight the matching venue card
+          cardEls.forEach(c => c.classList.remove('active'));
+          if (cardEls[i]) {
+            cardEls[i].classList.add('active');
+            venueScrollEl.scrollTop = cardEls[i].offsetTop - venueScrollEl.offsetTop - 8;
+          }
+        });
+        poiMarkers.push(marker);
+      });
+
+      // Build venue directory cards
+      const venueGrid = document.getElementById('venue-grid');
+      locations.forEach(({ title, emoji, icon, discount, category }, i) => {
+        const card = document.createElement('div');
+        card.className = 'venue-card';
+        card.dataset.category = category;
+        const logoHtml = icon
+          ? `<img src="${icon}" class="venue-logo-img" alt="${title}">`
+          : `<div class="venue-logo">${emoji}</div>`;
+        card.innerHTML =
+          logoHtml +
+          `<div class="venue-name">${title}</div>` +
+          (discount ? `<span class="venue-discount">🎟️ ${discount}</span>` : '');
+        card.addEventListener('click', () => {
+          const c = locations[i].coords;
+          map.flyTo(c, 16, { animate:true, duration:0.8 });
+          setTimeout(() => poiMarkers[i].openPopup(), 900);
+          cardEls.forEach(el => el.classList.remove('active'));
+          card.classList.add('active');
+        });
+        venueGrid.appendChild(card);
+        cardEls.push(card);
+      });
+
+      // ── Category filter buttons ────────────────────────────────────────
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const cat = btn.dataset.cat;
+          locations.forEach((loc, i) => {
+            const show = (cat === 'all' || (Array.isArray(loc.category) ? loc.category.includes(cat) : loc.category === cat));
+            cardEls[i].style.display = show ? '' : 'none';
+            if (show) { if (!map.hasLayer(poiMarkers[i])) poiMarkers[i].addTo(map); }
+            else       { if ( map.hasLayer(poiMarkers[i])) map.removeLayer(poiMarkers[i]); }
+          });
+        });
+      });
+
+    });
+  </script>
+  <script>
+    function tickClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const clock = document.getElementById('clock');
+      if (clock) clock.textContent = `${h}:${m}`;
+    }
+
+    tickClock();
+    setInterval(tickClock, 1000);
+  </script>
+</body>
+</html>

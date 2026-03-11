@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Χάρτης Campus — Πολυτεχνείο Κρήτης</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      padding: 20px 20px 60px;
+    }
+
+    .outer { border: 2px solid #000; width: min(1180px, 100%); }
+    .infill { border: 4px solid #c8a800; }
+    .inner { border: 2px solid #000; background: #f5f0e8; }
+
+    .titlebar {
+      background: #1a6fb5;
+      border-bottom: 2px solid #000;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 2px 2px 0 0 #5c9cd9, inset -2px -2px 0 0 #104574;
+    }
+    .titlebar-title {
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+    }
+    .titlebar-right { display: flex; align-items: center; gap: 10px; }
+    .titlebar-ver {
+      color: #b8d4ee;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .titlebar-buttons { display: flex; gap: 3px; }
+    .tb-btn { width: 12px; height: 12px; border: 2px solid #000; display: inline-block; }
+    .tb-btn-min { background: #c8a800; }
+    .tb-btn-max { background: #2e8b57; }
+    .tb-btn-cls { background: #c0392b; }
+
+    .window-body { padding: 16px; }
+    .campus-section { width: 100%; }
+
+    .section-header {
+      border: 2px solid #000;
+      background: #c8a800;
+      box-shadow: inset 2px 2px 0 0 #f7e48a, inset -2px -2px 0 0 #826c00;
+      text-align: center;
+      margin-bottom: 1rem;
+      padding: 16px;
+    }
+    .section-header .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #fff;
+      background: #1a6fb5;
+      border: 2px solid #000;
+      padding: 3px 10px;
+      margin-bottom: 10px;
+    }
+    .section-header h2 {
+      font-size: clamp(1.6rem, 3vw, 2.15rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: #000;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .section-header p {
+      font-size: 10px;
+      font-weight: 700;
+      color: #3a2a00;
+      max-width: 740px;
+      margin: 0 auto;
+      line-height: 1.5;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 0.8rem;
+      align-items: start;
+    }
+    @media (max-width: 740px) { .content-grid { grid-template-columns: 1fr; } }
+
+    .map-card {
+      background: #f1e1a5;
+      border: 2px solid #000;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 4px 4px 0 #000;
+    }
+    #map { background: #f1e1a5; }
+    .leaflet-tile-pane { filter: sepia(0.3) saturate(0.96) hue-rotate(-5deg) brightness(0.72) contrast(1.55); }
+    .leaflet-tile { opacity: 1; }
+
+    .map-watermark {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      z-index: 1100;
+      background: rgba(125,88,50,0.9);
+      color: #f1e1a5;
+      border: 2px solid #000;
+      box-shadow: 2px 2px 0 #000;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      pointer-events: none;
+    }
+    .reset-campus-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1100;
+      background: #1a6fb5;
+      color: #fff;
+      border: 2px solid #000;
+      box-shadow: 2px 2px 0 #000;
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+    }
+    .reset-campus-btn:hover { background: #2e8b57; }
+    .map-card::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 2px solid rgba(0,0,0,0.08);
+      pointer-events: none; z-index: 999;
+    }
+    .map-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 700;
+      background:
+        linear-gradient(180deg, rgba(125,88,50,0.045), rgba(71,53,35,0.02)),
+        repeating-linear-gradient(0deg, rgba(71,53,35,0.015), rgba(71,53,35,0.015) 1px, transparent 1px, transparent 3px);
+      mix-blend-mode: multiply;
+    }
+    #map { height: 520px; width: 100%; }
+
+    .leaflet-popup-content-wrapper {
+      background: #fff !important;
+      border: 2px solid #000 !important;
+      border-radius: 0 !important;
+      box-shadow: 4px 4px 0 #000 !important;
+      padding: 0 !important; overflow: hidden;
+    }
+    .leaflet-popup-content { margin: 0 !important; line-height: 1.5 !important; }
+    .leaflet-popup-tip { background: #fff !important; }
+    .leaflet-popup-close-button { color: #1a6fb5 !important; font-size: 15px !important; top: 3px !important; right: 5px !important; }
+    .leaflet-control-zoom a {
+      background: #1a6fb5 !important;
+      color: #fff !important;
+      border: 2px solid #000 !important;
+      border-radius: 0 !important;
+      font-family: monospace !important;
+      font-weight: 900 !important;
+    }
+    .leaflet-control-zoom a:hover { background: #2e8b57 !important; }
+    .leaflet-control-attribution {
+      background: rgba(245,240,232,0.9) !important;
+      color: #333 !important;
+      border: 1px solid #000 !important;
+      font-size: 9px !important;
+    }
+    .leaflet-control-attribution a { color: #1a6fb5 !important; }
+
+    .popup-card { padding: 0.85rem 1rem; min-width: 200px; }
+    .popup-title {
+      font-size: 0.7rem; font-weight: 900; color: #000;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      display: flex; align-items: center; gap: 0.4rem;
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.4rem;
+    }
+    .popup-title .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .popup-row {
+      display: flex; gap: 0.5rem;
+      font-size: 0.7rem; color: #222;
+      padding: 0.2rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+    }
+    .popup-row:last-child { border-bottom: none; }
+    .popup-lbl { color: #1a6fb5; font-weight: 900; min-width: 65px; flex-shrink: 0; }
+
+    .building-panel {
+      background: #fff;
+      border: 2px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      display: flex; flex-direction: column;
+      height: 524px;
+    }
+    .panel-title {
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      padding: 0.6rem 0.9rem 0.25rem;
+      background: #1a6fb5;
+      border-bottom: 2px solid #000;
+    }
+    .panel-sub {
+      font-size: 9px;
+      color: #333;
+      padding: 0.35rem 0.9rem 0.5rem;
+      border-bottom: 2px solid #000;
+      background: #f5f0e8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .panel-body {
+      padding: 0.6rem;
+      overflow-y: auto; flex: 1;
+      display: flex; flex-direction: column; gap: 0.55rem;
+      padding-bottom: 0.9rem;
+    }
+
+    .panel-tools {
+      border: 2px solid #000;
+      background: #e8f1fa;
+      box-shadow: 2px 2px 0 #000;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      margin-bottom: 0.1rem;
+    }
+    .search-row {
+      display: flex;
+      gap: 0.35rem;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      border: 2px solid #000;
+      background: #fff;
+      color: #111;
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.3rem 0.45rem;
+      text-transform: uppercase;
+    }
+    .search-btn {
+      border: 2px solid #000;
+      background: #c8a800;
+      color: #000;
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.45rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .search-btn:hover { background: #f7e48a; }
+    .search-status {
+      font-size: 9px;
+      font-weight: 700;
+      color: #333;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      min-height: 1.1em;
+    }
+    .toggle-row {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .toggle-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border: 2px solid #000;
+      background: #f5f0e8;
+      padding: 0.2rem 0.4rem;
+      font-size: 9px;
+      font-weight: 900;
+      color: #222;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      user-select: none;
+    }
+    .toggle-chip input { accent-color: #1a6fb5; }
+    .panel-body.is-buildings-hidden .bcard {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .bcard {
+      background: #f5f0e8;
+      border: 2px solid #000;
+      overflow: visible;
+      cursor: pointer;
+      transition: transform 0.14s, box-shadow 0.14s, background 0.14s;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .bcard:hover {
+      background: #fff;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 #000;
+    }
+    .bcard.active {
+      background: #dbe9f7 !important;
+      box-shadow: inset 2px 2px 0 0 #ffffff, inset -2px -2px 0 0 #9bb8d6 !important;
+    }
+    .bcard.active .bcard-row {
+      color: #1b2a3a;
+      border-bottom-color: rgba(27,42,58,0.14);
+    }
+    .bcard.active .bcard-lbl {
+      color: #1a6fb5;
+    }
+    .bcard-header {
+      background: #1a6fb5;
+      padding: 0.52rem 0.7rem;
+      display: flex; align-items: flex-start; gap: 0.55rem;
+      border-bottom: 2px solid #000;
+    }
+    .bcard-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; }
+    .bcard-name { font-size: 0.67rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; line-height: 1.35; word-break: break-word; }
+    .bcard-rows { padding: 0.35rem 0.7rem 0.45rem; }
+    .bcard-row {
+      display: flex; gap: 0.5rem;
+      font-size: 0.68rem; color: #111;
+      line-height: 1.32;
+      padding: 0.15rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .bcard-row:last-child { border-bottom: none; }
+    .bcard-lbl { color: #826c00; font-weight: 900; min-width: 60px; flex-shrink: 0; }
+
+    .legend-bar {
+      border-top: 2px solid #000;
+      padding: 0.5rem 0.7rem;
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+      background: #1a1a1a;
+    }
+    .leg-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.6rem; color: #c8a800; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 1px solid #000; }
+
+    .pin-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.7);
+      box-shadow: 0 0 0 2px #000, 0 2px 0 rgba(0,0,0,0.65);
+    }
+
+    .bus-stop-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: #c8a800;
+      border: 2px solid #f7e48a;
+      box-shadow: 0 0 0 2px #000, 0 2px 0 rgba(0,0,0,0.65);
+    }
+
+    .line-accent { color: #473523; }
+
+    .footer {
+      border-top: 2px solid #000;
+      background: #1a1a1a;
+      padding: 5px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-text {
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #826c00;
+    }
+    .footer-dots { display: flex; gap: 4px; }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #c8a800;
+      border: 1px solid #000;
+      animation: dot-pulse 1.2s infinite;
+    }
+    .status-dot:nth-child(2) { animation-delay: 0.4s; }
+    .status-dot:nth-child(3) { animation-delay: 0.8s; }
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    .taskbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: #2e8b57;
+      border-top: 2px solid #000;
+      display: flex;
+      align-items: stretch;
+      z-index: 2000;
+    }
+    .taskbar-start {
+      padding: 0 16px;
+      background: #1a6fb5;
+      border-right: 2px solid #000;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .taskbar-sep {
+      width: 1px;
+      background: #000;
+      margin: 4px 6px;
+      opacity: 0.3;
+    }
+    .taskbar-item {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #fff;
+      border: 2px solid #000;
+      margin: 3px 2px;
+      background: #1a6fb5;
+      box-shadow: inset 1px 1px 0 0 #5c9cd9, inset -1px -1px 0 0 #104574;
+    }
+    .taskbar-clock {
+      margin-left: auto;
+      padding: 0 14px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      border-left: 2px solid #000;
+    }
+    @media (max-width: 740px) {
+      #map { height: 400px; }
+      .search-row { flex-direction: column; }
+      .search-btn { width: 100%; }
+      .reset-campus-btn {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="outer">
+  <div class="infill">
+    <div class="inner">
+
+      <div class="titlebar">
+        <span class="titlebar-title">TUC MAP - System</span>
+        <div class="titlebar-right">
+          <span class="titlebar-ver">v1.7.0</span>
+          <div class="titlebar-buttons">
+            <span class="tb-btn tb-btn-min"></span>
+            <span class="tb-btn tb-btn-max"></span>
+            <span class="tb-btn tb-btn-cls"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="window-body">
+<section class="campus-section">
+
+  <div class="section-header">
+    <div class="badge">🏛 ΠΟΛΥΤΕΧΝΕΙΟ ΚΡΗΤΗΣ · Κουνουπιδιανά, Χανιά</div>
+    <h2>Campus Map</h2>
+    <p>Χάρτης αιθουσών και κτιρίων της Πολυτεχνειούπολης. Πάτησε σε ένα κτίριο για να δεις τις αίθουσές του.</p>
+  </div>
+
+  <div class="content-grid">
+
+    <div class="map-card">
+      <div id="map"></div>
+      <button class="reset-campus-btn" id="reset-campus-btn" type="button">Reset Campus</button>
+      <div class="map-watermark">SFHMMY 17 MAPS</div>
+    </div>
+
+    <div class="building-panel">
+      <div class="panel-title">Κτίρια &amp; Αίθουσες</div>
+      <p class="panel-sub">Πάτησε για να εντοπίσεις στον χάρτη</p>
+      <div class="panel-body">
+
+        <div class="panel-tools">
+          <div class="search-row">
+            <input id="campus-search" class="search-input" type="text" placeholder="Αναζήτηση: κτίριο ή στάση" />
+            <button id="campus-search-btn" class="search-btn" type="button">Find</button>
+          </div>
+          <p id="campus-search-status" class="search-status"></p>
+          <div class="toggle-row">
+            <label class="toggle-chip"><input id="toggle-buildings" type="checkbox" checked /> Κτίρια</label>
+            <label class="toggle-chip"><input id="toggle-stops" type="checkbox" checked /> Στάσεις 23</label>
+          </div>
+        </div>
+
+        <div class="bcard" data-idx="0">
+          <div class="bcard-header">
+            <span class="bcard-dot" style="background:#c0392b;"></span>
+            <span class="bcard-name">Κτίριο Μ — ΜΗΧΟΠ</span>
+          </div>
+          <div class="bcard-rows">
+            <div class="bcard-row"><span class="bcard-lbl">Εργαστήριο</span>Μ5</div>
+          </div>
+        </div>
+
+        <div class="bcard" data-idx="1">
+          <div class="bcard-header">
+            <span class="bcard-dot" style="background:#2563eb;"></span>
+            <span class="bcard-name">Κτίριο Επιστημών - ΗΜΜΥ</span>
+          </div>
+          <div class="bcard-rows">
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>137.Π39 · Ισόγειο</div>
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>Θέλμα Μαυρίδου · 1ος</div>
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>145.Π42 · 2ος</div>
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>145.Π58 · 2ος</div>
+          </div>
+        </div>
+
+        <div class="bcard" data-idx="2">
+          <div class="bcard-header">
+            <span class="bcard-dot" style="background:#16a34a;"></span>
+            <span class="bcard-name">Κτίριο Γ2</span>
+          </div>
+          <div class="bcard-rows">
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>Γ2.1 · Μανούσος Μανουσάκης</div>
+            <div class="bcard-row"><span class="bcard-lbl">Αίθουσα</span>Γ2.2 · Γεώργιος Κατσανεβάκης</div>
+          </div>
+        </div>
+
+        <div class="bcard" data-idx="3">
+          <div class="bcard-header">
+            <span class="bcard-dot" style="background:#7c3aed;"></span>
+            <span class="bcard-name">Κτίριο Γ1 - Σχεδιαστήρια ΑΡΜΗΧ και Εργαστήρια</span>
+          </div>
+          <div class="bcard-rows">
+            <div class="bcard-row"><span class="bcard-lbl">Εργαστήριο</span>Γ1.002</div>
+            <div class="bcard-row"><span class="bcard-lbl">Εργαστήριο</span>Γ1.003</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="legend-bar">
+        <div class="leg-item"><span class="leg-dot" style="background:#c0392b;"></span>Κτίριο Μ</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#2563eb;"></span>Κτίριο Λ</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#16a34a;"></span>Κτίριο Γ2</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#7c3aed;"></span>Κτίριο Γ1</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#ff9f1a;"></span>Στάσεις λεωφορείου 23</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+      </div>
+
+      <div class="footer">
+        <span class="footer-text">Campus map online...</span>
+        <div class="footer-dots">
+          <div class="status-dot"></div>
+          <div class="status-dot"></div>
+          <div class="status-dot"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="taskbar">
+  <div class="taskbar-start">Start</div>
+  <div class="taskbar-sep"></div>
+  <div class="taskbar-item">CampusMap.exe</div>
+  <div class="taskbar-clock" id="clock">--:--</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const BUILDINGS = [
+    {
+      coords: [35.531678, 24.069511], color: '#c0392b',
+      name: 'Κτίριο Μ — Κεντρικό Συγκρότημα',
+      rows: [['Αίθουσα','Μ5 · Ισόγειο']]
+    },
+    {
+      coords: [35.531493, 24.068202], color: '#2563eb',
+      name: 'Κτίριο Λ — Κτίριο Επιστημών',
+      rows: [['Αίθουσα','Θέλμα Μαυρίδου · 1ος'],['Αίθουσα','137.Π39 · Ισόγειο'],['Αίθουσα','145.Π42 · 2ος'],['Αίθουσα','145.Π58 · 2ος']]
+    },
+    {
+      coords: [35.527114, 24.070232], color: '#16a34a',
+      name: 'Κτίριο Γ2',
+      rows: [['Αίθουσα','Γ2.1 (Μανούσος Μανουσάκης)'],['Αίθουσα','Γ2.2 (Γεώργιος Κατσανεβάκης)']]
+    },
+    {
+      coords: [35.527262, 24.069937], color: '#7c3aed',
+      name: 'Κτίριο Γ1',
+      rows: [['Χρήση','Σχεδιαστήρια ΑΡΜΗΧ'],['Χρήση','Εργαστήρια']]
+    },
+  ];
+
+  const BUS_23_STOPS = [
+    { name: 'ΜΠΔ', coords: [35.5265817, 24.0710201] },
+    { name: 'ΕΣΤΙΑ', coords: [35.5293823, 24.0658424] },
+    { name: 'ΜΗΠΕΡ', coords: [35.5331674, 24.0690206] },
+    { name: 'HMMY', coords: [35.5321957, 24.0670607] },
+    { name: 'ΜΗΧΟΠ', coords: [35.5322616, 24.0706675] },
+    { name: 'ΛΕΣΧΗ', coords: [35.5284487, 24.0710918] },
+    { name: 'ΤΣ ΠΟΛΥΤΕΧΝΕΙΟ', coords: [35.52698397385573, 24.071546688742373] },
+    { name: 'ΠΥΛΗ ΠΟΛΥΤΕΧΝΕΙΟΥ', coords: [35.5261764, 24.0676652] },
+  ];
+
+  const CAMPUS_CENTER = [35.529400, 24.069370];
+  const CAMPUS_ZOOM = 16;
+
+  const map = L.map('map', { center: CAMPUS_CENTER, zoom: CAMPUS_ZOOM });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 22,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+  }).addTo(map);
+
+  const buildingLayer = L.layerGroup().addTo(map);
+  const busStopLayer = L.layerGroup().addTo(map);
+
+  const markers = BUILDINGS.map((b, i) => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="pin-dot" style="background:${b.color};"></div>`,
+      iconSize: [14,14], iconAnchor: [7,7], popupAnchor: [0,-10],
+    });
+
+    const rowsHTML = b.rows.map(([l,v]) =>
+      `<div class="popup-row"><span class="popup-lbl">${l}</span>${v}</div>`
+    ).join('');
+
+    const mk = L.marker(b.coords, { icon }).addTo(buildingLayer).bindPopup(
+      L.popup({ maxWidth: 260, minWidth: 200 }).setContent(
+        `<div class="popup-card">
+           <div class="popup-title"><span class="dot" style="background:${b.color};"></span>${b.name}</div>
+           ${rowsHTML}
+         </div>`
+      )
+    );
+    return mk;
+  });
+
+  const cards = document.querySelectorAll('.bcard');
+  const panelBody = document.querySelector('.panel-body');
+  const buildingsToggle = document.getElementById('toggle-buildings');
+  const stopsToggle = document.getElementById('toggle-stops');
+  const searchInput = document.getElementById('campus-search');
+  const searchButton = document.getElementById('campus-search-btn');
+  const searchStatus = document.getElementById('campus-search-status');
+  const resetCampusButton = document.getElementById('reset-campus-btn');
+
+  cards.forEach((card, i) => {
+    card.addEventListener('click', () => {
+      if (!map.hasLayer(buildingLayer)) {
+        map.addLayer(buildingLayer);
+        buildingsToggle.checked = true;
+        panelBody.classList.remove('is-buildings-hidden');
+      }
+      cards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      map.flyTo(BUILDINGS[i].coords, 18, { animate: true, duration: 0.7 });
+      markers[i].openPopup();
+    });
+  });
+
+  markers.forEach((mk, i) => {
+    mk.on('popupopen',  () => { cards.forEach(c => c.classList.remove('active')); cards[i].classList.add('active'); });
+    mk.on('popupclose', () => { cards[i].classList.remove('active'); });
+  });
+
+  const busIcon = L.divIcon({
+    className: '',
+    html: '<div class="bus-stop-dot"></div>',
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+    popupAnchor: [0, -8],
+  });
+
+  const busMarkers = BUS_23_STOPS.map((stop) => {
+    return L.marker(stop.coords, { icon: busIcon }).addTo(busStopLayer).bindPopup(
+      L.popup({ maxWidth: 250 }).setContent(
+        `<div class="popup-card">\
+          <div class="popup-title"><span class="dot" style="background:#ff9f1a;"></span>Στάση Γραμμής 23</div>\
+          <div class="popup-row"><span class="popup-lbl">Όνομα</span>${stop.name}</div>\
+        </div>`
+      )
+    );
+  });
+
+  function normalizeText(value) {
+    return (value || '')
+      .toLocaleLowerCase('el-GR')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function setSearchStatus(message) {
+    searchStatus.textContent = message || '';
+  }
+
+  function runCampusSearch() {
+    const query = normalizeText(searchInput.value.trim());
+    if (!query) {
+      setSearchStatus('Γράψε όνομα κτιρίου ή στάσης.');
+      return;
+    }
+
+    const buildingIndex = BUILDINGS.findIndex((b) => {
+      const inName = normalizeText(b.name).includes(query);
+      const inRows = b.rows.some(([, value]) => normalizeText(value).includes(query));
+      return inName || inRows;
+    });
+
+    if (buildingIndex >= 0) {
+      if (!map.hasLayer(buildingLayer)) {
+        map.addLayer(buildingLayer);
+        buildingsToggle.checked = true;
+        panelBody.classList.remove('is-buildings-hidden');
+      }
+      cards.forEach(c => c.classList.remove('active'));
+      cards[buildingIndex].classList.add('active');
+      map.flyTo(BUILDINGS[buildingIndex].coords, 18, { animate: true, duration: 0.75 });
+      markers[buildingIndex].openPopup();
+      cards[buildingIndex].scrollIntoView({ block: 'nearest' });
+      setSearchStatus(`Βρέθηκε κτίριο: ${BUILDINGS[buildingIndex].name}`);
+      return;
+    }
+
+    const stopIndex = BUS_23_STOPS.findIndex((stop) => normalizeText(stop.name).includes(query));
+    if (stopIndex >= 0) {
+      if (!map.hasLayer(busStopLayer)) {
+        map.addLayer(busStopLayer);
+        stopsToggle.checked = true;
+      }
+      cards.forEach(c => c.classList.remove('active'));
+      map.flyTo(BUS_23_STOPS[stopIndex].coords, 18, { animate: true, duration: 0.75 });
+      busMarkers[stopIndex].openPopup();
+      setSearchStatus(`Βρέθηκε στάση: ${BUS_23_STOPS[stopIndex].name}`);
+      return;
+    }
+
+    setSearchStatus('Δεν βρέθηκε αντιστοιχία.');
+  }
+
+  buildingsToggle.addEventListener('change', () => {
+    if (buildingsToggle.checked) {
+      buildingLayer.addTo(map);
+      panelBody.classList.remove('is-buildings-hidden');
+    } else {
+      map.removeLayer(buildingLayer);
+      cards.forEach(c => c.classList.remove('active'));
+      panelBody.classList.add('is-buildings-hidden');
+    }
+  });
+
+  stopsToggle.addEventListener('change', () => {
+    if (stopsToggle.checked) busStopLayer.addTo(map);
+    else map.removeLayer(busStopLayer);
+  });
+
+  searchButton.addEventListener('click', runCampusSearch);
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      runCampusSearch();
+    }
+  });
+
+  resetCampusButton.addEventListener('click', () => {
+    map.closePopup();
+    cards.forEach(c => c.classList.remove('active'));
+    map.flyTo(CAMPUS_CENTER, CAMPUS_ZOOM, { animate: true, duration: 0.75 });
+    setSearchStatus('Έγινε επαναφορά στο campus.');
+  });
+
+  function tickClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const clock = document.getElementById('clock');
+    if (clock) clock.textContent = `${h}:${m}`;
+  }
+
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  window.addEventListener('load', () => map.invalidateSize());
+  setTimeout(() => map.invalidateSize(), 300);
+</script>
+
+</body>
+</html>

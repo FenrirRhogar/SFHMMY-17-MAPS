@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Coffee bean body -->
+  <ellipse cx="32" cy="28" rx="20" ry="23" fill="#1a1508" stroke="#d4a843" stroke-width="2"/>
+  <!-- Bean crease -->
+  <path d="M32,7 Q22,17 22,28 Q22,39 32,49" stroke="#a87830" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- K lettermark -->
+  <line x1="26" y1="15" x2="26" y2="34" stroke="#d4a843" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="26" y1="24.5" x2="38" y2="15" stroke="#d4a843" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="26" y1="24.5" x2="38" y2="34" stroke="#d4a843" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- Flame / roast fire -->
+  <path d="M24,52 Q26,44 30,48 Q31,41 33,46 Q35,41 34,46 Q38,44 40,52 Q37,61 32,63 Q27,61 24,52 Z" fill="#d4a843"/>
+  <path d="M28,54 Q30,49 32,51 Q34,49 36,54 Q34,61 32,62 Q30,61 28,54 Z" fill="#f0e0a0"/>
+</svg>
