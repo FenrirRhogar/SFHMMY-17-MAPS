@@ -247,15 +247,19 @@
       box-shadow: 0 4px 14px rgba(212,168,67,0.15);
     }
     .venue-card:active { transform: translateY(-1px); }
-    .venue-logo { font-size: 1.8rem; line-height: 1; }
+    .venue-logo {
+      font-size: 1.8rem;
+      line-height: 1;
+      filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.45));
+    }
     .venue-logo-img {
       width: 48px; height: 48px;
       object-fit: contain;
-      filter: drop-shadow(0 0 4px rgba(212,168,67,0.3));
+      filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.45)) drop-shadow(0 0 4px rgba(212,168,67,0.3));
       transition: filter 0.2s, transform 0.2s;
     }
     .venue-card:hover .venue-logo-img {
-      filter: drop-shadow(0 0 8px rgba(212,168,67,0.65));
+      filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 8px rgba(212,168,67,0.65));
       transform: scale(1.08);
     }
     .venue-name {
@@ -825,13 +829,13 @@
 
       function makeIcon(emoji, iconFile) {
         const inner = iconFile
-          ? `<img src="${iconFile}" style="width:22px;height:22px;transform:rotate(45deg);object-fit:contain;">`
-          : `<span style="transform:rotate(45deg);font-size:14px">${emoji}</span>`;
+          ? `<img src="${iconFile}" style="width:22px;height:22px;transform:rotate(45deg);object-fit:contain;filter:drop-shadow(1px 2px 0 rgba(0,0,0,0.45));">`
+          : `<span style="transform:rotate(45deg);font-size:14px;filter:drop-shadow(1px 2px 0 rgba(0,0,0,0.45));">${emoji}</span>`;
         return L.divIcon({
           className: '',
           html: `<div style="
             width:34px;height:34px;
-            background:linear-gradient(135deg,#2f2216,#4a3522);
+            background:linear-gradient(135deg,#7b6448,#b69363);
             border:2px solid rgba(255,220,100,0.5);
             border-radius:50% 50% 50% 0;
             transform:rotate(-45deg);
@@ -1950,15 +1954,15 @@
         { coords:[35.5182903,24.0228003], category:'poto',
           gmaps:'https://maps.google.com/?q=35.5182903,24.0228003',
           photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAwern4yw1_2rEV4H8fWdrqg05rdpF8jkByOV9YLod3e5SPYXovPOLqOYvkQHylrpokvvSa8K3gqB56w8jJm-fLSn6NXBO4s56ccDzyxK--t_WNqnVpfuQSZcl9GpMBaUzxxheC1Qm=w426-h240-k-no',
-          title:'Τα Δύο Λουξ', emoji:'✨', discount:'−10%', icon:'icons/dyo-loux.svg' },
-        { coords:[35.528517395950985,24.073780247419222], category:'fagito',
-          gmaps:'https://maps.google.com/?q=35.528517,24.073780',
-          photo:'https://maps.app.goo.gl/oPLSM4asaDtZ4ZRT7',
-          title:'Γουρουνάκια', emoji:'🍖', discount:'−10%', icon:'icons/gourounakia.svg' },
+          title:'Τα Δύο Λουξ', emoji:'✨', discount:'−10%', icon:'icons/loux.png' },
+        // { coords:[35.528517395950985,24.073780247419222], category:'fagito',
+        //   gmaps:'https://maps.google.com/?q=35.528517,24.073780',
+        //   photo:'https://maps.app.goo.gl/oPLSM4asaDtZ4ZRT7',
+        //   title:'Γουρουνάκια', emoji:'🍖', discount:'−10%', icon:'icons/gourounakia.svg' },
         { coords:[35.51479698884451, 24.025495266581913], category:'poto',
           gmaps:'https://maps.app.goo.gl/s9dK6HdSc7KDR1Jy7',
           photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweoOOPYON8OEVFicik5QfY-g504S_VlShoL_BJVAqelyRSuNo_UUYSMeKA4dj6MRc8npksZRj6lLTj9KULaPw7SivOiF4X08cRyC4kakfwuCxtHttXbhcuWzvbPvPr4O5Omskh6MvA=w408-h906-k-no',
-          title:'Τίγκα the Bar', emoji:'🍹', discount:'−1.5€ ποτά & -0.5€ μπύρες', icon:'icons/tigka.png' },
+          title:'Τίγκα the Bar', emoji:'🍹', discount:'−1.5€/-0.5€ ποτά/μπύρες', icon:'icons/tigka.png' },
         // ── Αξιοθέατα ────────────────────────────────────────────────────
         { coords:[35.5292719782402,24.068645732324143], category:'aksiotheato',
           gmaps:'https://maps.google.com/?q=35.529272,24.068646', photo:null,
@@ -1966,15 +1970,19 @@
         { coords:[35.519569945218564,24.016703087166775], category:'aksiotheato',
           gmaps:'https://maps.google.com/?q=35.519570,24.016703',
           photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Chania_Lighthouse.jpg',
-          title:'Ενετικός Φάρος', emoji:'🏛️', icon:'icons/faros.svg' },
+          title:'Ενετικός Φάρος', emoji:'🏛️', icon:'icons/faros.png' },
         { coords:[35.5245,24.0560], category:'aksiotheato',
           gmaps:'https://maps.google.com/?q=35.5245,24.0560',
-          photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Venizelos_graves_Chania.jpg',
-          title:'Τάφοι Βενιζέλων', emoji:'🌅', icon:'icons/venizeloi.svg' },
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweozVjAnIS27XxhgXZlYMmqyIhkmnwqmIx3cYFrbq9P_PuzWWrhLi0kdL7tgtJjpazk8pZrZeVJPm-72tpccpQRDh29551OTaG5DYtKGgscDj4e87QNpCJRb3tILqIyG6Cq9my8i=w408-h306-k-no',
+          title:'Τάφοι Βενιζέλων', emoji:'🌅', icon:'icons/tafoi.png' },
+        { coords:[35.51833920013641,24.038694810785586], category:'aksiotheato',
+          gmaps:'https://maps.app.goo.gl/KqNgiuWKzUQh4vXYA',
+          photo:'https://lh3.googleusercontent.com/gps-cs-s/AHVAweoC1tYAk5TzarpVG7EsD8sgSDaXTAJ1N2dIb-nN2HHPTyKnY7mc_UUk0IMyM1KSyFwN-qsHs2t0U1bAi8MtqWL63Dwu0e-8OIhQjOkq7_QjawWtK8tB21vDZyVJNt6v8dU0DE0_=w408-h280-k-no',
+          title:'Οικία Ελευθερίου Βενιζέλου', emoji:'🏛️', icon:'icons/venizelos.png' },
         { coords:[35.51417003729222,24.020348638502128], category:'aksiotheato',
           gmaps:'https://maps.google.com/?q=35.514170,24.020349',
-          photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Chania_covered_market.jpg',
-          title:'Δημοτική Αγορά Χανίων', emoji:'🏛️', icon:'icons/agora.svg' },
+          photo:'icons/agora.jpg',
+          title:'Δημοτική Αγορά Χανίων', emoji:'🏛️', icon:'icons/agora.png' },
       ];
 
       const poiMarkers = [];
@@ -2021,7 +2029,7 @@
         card.innerHTML =
           logoHtml +
           `<div class="venue-name">${title}</div>` +
-          (discount ? `<span class="venue-discount">🎟️ ${discount}</span>` : '');
+          (discount ? `<span class="venue-discount">${discount}</span>` : '');
         card.addEventListener('click', () => {
           const c = locations[i].coords;
           map.flyTo(c, 16, { animate:true, duration:0.8 });
